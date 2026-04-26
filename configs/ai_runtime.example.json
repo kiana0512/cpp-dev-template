@@ -1,0 +1,50 @@
+{
+  "tts": {
+    "backend": "auto",
+    "indextts_repo": "third_party/index-tts",
+    "indextts_model_dir": "models/IndexTTS-2",
+    "indextts_config": "models/IndexTTS-2/config.yaml",
+    "indextts_infer_script": "",
+    "python_executable": "",
+    "default_speaker_wav": "",
+    "default_emo_audio_prompt": "",
+    "emo_alpha": 0.6,
+    "use_fp16": false,
+    "use_cuda_kernel": false,
+    "use_deepspeed": false,
+    "use_random": false,
+    "device": "cuda",
+    "dtype": "float16",
+    "fallback_to_dryrun": false
+  },
+  "runtime": {
+    "fps": 30,
+    "character_id": "yyb_miku",
+    "morph_map": "configs/blendshape_map_yyb_miku.json",
+    "skeleton_tree": "configs/skeleton_tree_BP_Miku_C_UAID_D85ED3D0834367D302_1401539439_miku_mesh.json",
+    "output_root": "output/ai_sessions"
+  },
+  "face": {
+    "emotion_strength": 0.7,
+    "mouth_gain": 1.0,
+    "jaw_gain": 0.9,
+    "blink_enabled": true,
+    "blink_interval_min_sec": 2.0,
+    "blink_interval_max_sec": 5.0
+  },
+  "alignment": {
+    "backend": "heuristic",
+    "use_pypinyin_if_available": true,
+    "optional_forced_aligner": false
+  },
+  "skeleton": {
+    "analyze_tree": true,
+    "semantic_map": "configs/skeleton_semantic_map_yyb_miku.json",
+    "drive_skeleton_by_default": false
+  },
+  "playback": {
+    "host": "127.0.0.1",
+    "port": 7001,
+    "use_timestamp": true
+  }
+}

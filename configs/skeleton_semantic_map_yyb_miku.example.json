@@ -1,0 +1,33 @@
+{
+  "version": "yyb-miku-skeleton-semantic-map-v1",
+  "character": "yyb_miku",
+  "source_skeleton_tree": "configs/skeleton_tree_BP_Miku_C_UAID_D85ED3D0834367D302_1401539439_miku_mesh.json",
+  "bone_count": 573,
+  "purpose": "reference_only_for_future_v2m",
+  "drive_skeleton_by_default": false,
+  "semantic_bones": {
+    "root": {
+      "bone": "miku条纹袜_arm",
+      "index": 0,
+      "path": "miku条纹袜_arm",
+      "confidence": 1.0
+    },
+    "neck": {
+      "bone": "首",
+      "index": 9,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首",
+      "confidence": 1.0
+    },
+    "head": {
+      "bone": "頭",
+      "index": 10,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭",
+      "confidence": 1.0
+    }
+  },
+  "warnings": [],
+  "note": [
+    "This file is only for later V2M / Control Rig / AnimBP work.",
+    "Current AI runtime still drives Morph Target only."
+  ]
+}

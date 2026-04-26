@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>VhSenderGui</RootNamespace>
+    <AssemblyName>VhSenderGui</AssemblyName>
+    <ApplicationTitle>VH Sender — UE Virtual Human Debug Tool</ApplicationTitle>
+    <Version>1.1.0</Version>
+  </PropertyGroup>
+
+</Project>

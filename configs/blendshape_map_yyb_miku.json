@@ -1,0 +1,34 @@
+{
+  "version": "final-demo-v1",
+  "character": "yyb_miku",
+  "purpose": "reference_only",
+  "note": [
+    "这个文件现在主要用于文档和资产核对，UE5 插件默认会内置同一套映射，不再要求 Blueprint 手工录入。",
+    "如果你的 YYB Miku 资源导入后 Morph 名与这里不同，可把差异填到组件的 MorphNameOverrides / PhonemeNameOverrides 中。",
+    "空字符串表示该协议键在默认演示版中静默跳过。"
+  ],
+  "default_morph_mappings": {
+    "jawOpen": "あ",
+    "mouthSmile": "口角上げ",
+    "mouthFrown": "困る",
+    "eyeBlinkLeft": "ウィンク",
+    "eyeBlinkRight": "ウィンク右",
+    "eyeSquintLeft": "笑い",
+    "eyeSquintRight": "笑い",
+    "eyeWideLeft": "びっくり",
+    "eyeWideRight": "びっくり",
+    "browInnerUp": "はぅ",
+    "browDown": "怒り",
+    "browOuterUpLeft": "上_左",
+    "browOuterUpRight": "上_右",
+    "noseSneerLeft": "",
+    "noseSneerRight": ""
+  },
+  "default_phoneme_mappings": {
+    "a": "あ",
+    "i": "い",
+    "u": "う",
+    "e": "え",
+    "o": "お"
+  }
+}

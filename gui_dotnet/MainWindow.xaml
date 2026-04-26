@@ -1,0 +1,413 @@
+<Window x:Class="VhSenderGui.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="VH Sender - UE Virtual Human Debug Tool"
+        Height="900" Width="1280"
+        MinHeight="720" MinWidth="1040">
+    <DockPanel>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem><TextBlock x:Name="SbSeq" Text="seq: -"/></StatusBarItem>
+            <Separator/>
+            <StatusBarItem><TextBlock x:Name="SbEmotion" Text="emotion: -"/></StatusBarItem>
+            <Separator/>
+            <StatusBarItem><TextBlock x:Name="SbPhoneme" Text="phoneme: -"/></StatusBarItem>
+            <Separator/>
+            <StatusBarItem><TextBlock x:Name="SbBytes" Text="bytes: -"/></StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                <TextBlock x:Name="SbError" Foreground="DarkRed" TextTrimming="CharacterEllipsis"/>
+            </StatusBarItem>
+        </StatusBar>
+
+        <Grid Margin="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <GroupBox Header="Connection" Grid.Row="0" Padding="6" Margin="0,0,0,6">
+                <WrapPanel VerticalAlignment="Center">
+                    <Label Content="Host:" VerticalAlignment="Center"/>
+                    <TextBox x:Name="HostBox" Width="130" Text="127.0.0.1" VerticalAlignment="Center"/>
+                    <Label Content="Port:" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                    <TextBox x:Name="PortBox" Width="56" Text="7001" VerticalAlignment="Center"/>
+                    <Button x:Name="ConnectBtn" Content="Connect" Width="78" Margin="12,0,4,0" Click="ConnectBtn_OnClick"/>
+                    <Button x:Name="DisconnectBtn" Content="Disconnect" Width="88" Margin="0,0,12,0" IsEnabled="False" Click="DisconnectBtn_OnClick"/>
+                    <TextBlock Text="|" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock x:Name="ConnStatus" Text="Disconnected" FontWeight="Bold" Foreground="DarkRed" VerticalAlignment="Center" MinWidth="160"/>
+                    <TextBlock x:Name="LastSendLabel" Text="Last send: -" Margin="16,0,0,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="|" VerticalAlignment="Center" Margin="8,0,8,0"/>
+                    <TextBlock x:Name="LastSeqLabel" Text="Last seq: -" VerticalAlignment="Center"/>
+                </WrapPanel>
+            </GroupBox>
+
+            <GroupBox Header="Repository Paths" Grid.Row="1" Padding="6" Margin="0,0,0,6">
+                <StackPanel>
+                    <TextBlock x:Name="PathPresets" TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+                    <TextBlock x:Name="PathBlendshape" TextWrapping="Wrap" FontSize="11" Foreground="Gray" Margin="0,2,0,0"/>
+                    <TextBlock x:Name="PathOutputJsonl" TextWrapping="Wrap" FontSize="11" Foreground="Gray" Margin="0,2,0,0"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <Button x:Name="ReloadPresetsBtn" Content="Reload presets.json" Padding="8,2" Click="ReloadPresetsBtn_OnClick"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <TabControl Grid.Row="2">
+                <TabItem Header="Manual Sender">
+                    <Grid Margin="0,6,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="2*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid Grid.Row="0" Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="230" MinWidth="180"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <GroupBox Header="Presets" Grid.Column="0" Padding="6">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <ListBox x:Name="PresetList" Grid.Row="0"
+                                             DisplayMemberPath="Name"
+                                             SelectionChanged="PresetList_OnSelectionChanged"
+                                             MouseDoubleClick="PresetList_OnMouseDoubleClick"/>
+                                    <Button x:Name="SendPresetBtn" Grid.Row="1" Content="Send Selected Preset" Margin="0,6,0,0" Click="SendPresetBtn_OnClick"/>
+                                    <TextBlock x:Name="PresetSummary" Grid.Row="2" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0" Foreground="DimGray"/>
+                                </Grid>
+                            </GroupBox>
+                            <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" Background="Transparent"/>
+                            <GroupBox Header="Frame Parameters" Grid.Column="2" Padding="8">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Label Grid.Row="0" Grid.Column="0" Content="Text:"/>
+                                        <TextBox x:Name="TextBoxLine" Grid.Row="0" Grid.Column="1" Text="Hello"/>
+                                        <Label Grid.Row="1" Grid.Column="0" Content="Emotion:"/>
+                                        <ComboBox x:Name="EmotionCombo" Grid.Row="1" Grid.Column="1"/>
+                                        <Label Grid.Row="2" Grid.Column="0" Content="Phoneme:"/>
+                                        <ComboBox x:Name="PhonemeCombo" Grid.Row="2" Grid.Column="1"/>
+                                        <Label Grid.Row="3" Grid.Column="0" Content="RMS [0,1]:"/>
+                                        <DockPanel Grid.Row="3" Grid.Column="1">
+                                            <TextBlock x:Name="RmsValueLabel" DockPanel.Dock="Right" Width="45" TextAlignment="Right" VerticalAlignment="Center"/>
+                                            <Slider x:Name="RmsSlider" Minimum="0" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True" Value="0.4" ValueChanged="RmsSlider_OnValueChanged"/>
+                                        </DockPanel>
+                                        <Label Grid.Row="4" Grid.Column="0" Content="Confidence [0,1]:"/>
+                                        <DockPanel Grid.Row="4" Grid.Column="1">
+                                            <TextBlock x:Name="ConfValueLabel" DockPanel.Dock="Right" Width="45" TextAlignment="Right" VerticalAlignment="Center"/>
+                                            <Slider x:Name="ConfSlider" Minimum="0" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True" Value="0.9" ValueChanged="ConfSlider_OnValueChanged"/>
+                                        </DockPanel>
+                                        <Label Grid.Row="5" Grid.Column="0" Content="Loop FPS:"/>
+                                        <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal">
+                                            <Slider x:Name="FpsSlider" Width="220" Minimum="0.1" Maximum="60" TickFrequency="1" Value="10" ValueChanged="FpsSlider_OnValueChanged"/>
+                                            <TextBlock x:Name="FpsLabel" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                        </StackPanel>
+                                        <Label Grid.Row="6" Grid.Column="0" Content="Count / Start seq:"/>
+                                        <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal">
+                                            <TextBox x:Name="CountBox" Width="80" Text="0"/>
+                                            <TextBox x:Name="StartSeqBox" Width="100" Text="1" Margin="12,0,0,0"/>
+                                        </StackPanel>
+                                        <Label Grid.Row="7" Grid.Column="0" Content="Character ID:"/>
+                                        <TextBox x:Name="CharacterIdBox" Grid.Row="7" Grid.Column="1" Text="miku_yyb_001"/>
+                                        <Label Grid.Row="8" Grid.Column="0" Content="Mode:"/>
+                                        <ComboBox x:Name="ModeCombo" Grid.Row="8" Grid.Column="1" SelectionChanged="ModeCombo_OnSelectionChanged"/>
+                                        <Label Grid.Row="9" Grid.Column="0" Content="File output:"/>
+                                        <TextBox x:Name="OutputPathBox" Grid.Row="9" Grid.Column="1" Text="outputs/frames.jsonl"/>
+                                        <Label Grid.Row="10" Grid.Column="0" Content="Head P/Y/R:"/>
+                                        <StackPanel Grid.Row="10" Grid.Column="1" Orientation="Horizontal">
+                                            <TextBlock Text="P" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                            <Slider x:Name="HeadPitchSlider" Width="90" Minimum="-90" Maximum="90" TickFrequency="5" IsSnapToTickEnabled="True" Value="0" ValueChanged="HeadPoseSlider_OnValueChanged"/>
+                                            <TextBlock Text="Y" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                                            <Slider x:Name="HeadYawSlider" Width="90" Minimum="-90" Maximum="90" TickFrequency="5" IsSnapToTickEnabled="True" Value="0" ValueChanged="HeadPoseSlider_OnValueChanged"/>
+                                            <TextBlock Text="R" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                                            <Slider x:Name="HeadRollSlider" Width="90" Minimum="-90" Maximum="90" TickFrequency="5" IsSnapToTickEnabled="True" Value="0" ValueChanged="HeadPoseSlider_OnValueChanged"/>
+                                            <TextBlock x:Name="HeadPoseLabel" VerticalAlignment="Center" Margin="12,0,0,0" MinWidth="120"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </ScrollViewer>
+                            </GroupBox>
+                        </Grid>
+                        <WrapPanel Grid.Row="1" Margin="0,0,0,6">
+                            <Button x:Name="SendOnceBtn" Content="Send Once" MinWidth="88" Margin="0,0,8,4" Click="SendOnceBtn_OnClick"/>
+                            <Button x:Name="StartLoopBtn" Content="Start Loop" MinWidth="88" Margin="0,0,8,4" Click="StartLoopBtn_OnClick"/>
+                            <Button x:Name="StopLoopBtn" Content="Stop Loop" MinWidth="88" Margin="0,0,8,4" IsEnabled="False" Click="StopLoopBtn_OnClick"/>
+                            <Button x:Name="TestTcpBtn" Content="Test TCP" MinWidth="88" Margin="0,0,8,4" Click="TestTcpBtn_OnClick"/>
+                            <Button x:Name="SendSampleBtn" Content="Send sample_frame.json" MinWidth="150" Margin="0,0,8,4" Click="SendSampleBtn_OnClick"/>
+                            <Button Content="Clear Logs" MinWidth="80" Margin="0,0,8,4" Click="ClearLogBtn_OnClick"/>
+                            <Button Content="Save Logs" MinWidth="80" Margin="0,0,8,4" Click="SaveLogBtn_OnClick"/>
+                            <Button Content="Copy Latest JSON" MinWidth="120" Margin="0,0,8,4" Click="CopyJsonBtn_OnClick"/>
+                        </WrapPanel>
+                        <TabControl x:Name="LogTabs" Grid.Row="2">
+                            <TabItem Header="App Log">
+                                <TextBox x:Name="AppLogBox" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" TextWrapping="NoWrap" FontFamily="Consolas" FontSize="11"/>
+                            </TabItem>
+                            <TabItem Header="Raw JSON">
+                                <TextBox x:Name="JsonLogBox" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" TextWrapping="NoWrap" FontFamily="Consolas" FontSize="11"/>
+                            </TabItem>
+                            <TabItem Header="Errors">
+                                <TextBox x:Name="ErrorLogBox" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" TextWrapping="NoWrap" FontFamily="Consolas" FontSize="11"/>
+                            </TabItem>
+                        </TabControl>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="AI Runtime">
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="3*"/>
+                        </Grid.ColumnDefinitions>
+                        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel>
+                                <GroupBox Header="Basic" Padding="8" Margin="0,0,0,6">
+                                    <StackPanel>
+                                        <TextBlock Text="Text"/>
+                                        <TextBox x:Name="AiTextBox" Height="80" AcceptsReturn="True" TextWrapping="Wrap" Text="你好，我是初音未来虚拟人助手，很高兴见到你。"/>
+                                        <WrapPanel Margin="0,8,0,0">
+                                            <Label Content="Emotion"/>
+                                            <ComboBox x:Name="AiEmotionCombo" Width="120"/>
+                                            <Label Content="Backend" Margin="12,0,0,0"/>
+                                            <ComboBox x:Name="AiBasicBackendCombo" Width="160" SelectionChanged="AiBasicBackendCombo_OnSelectionChanged"/>
+                                        </WrapPanel>
+                                        <Border BorderBrush="#FFD7D7D7" BorderThickness="1" Padding="6" Margin="0,8,0,0">
+                                            <StackPanel>
+                                                <TextBlock Text="Runtime Environment" FontWeight="Bold" Margin="0,0,0,4"/>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+                                                    <Label Grid.Row="0" Grid.Column="0" Content="Python"/>
+                                                    <TextBox x:Name="AiPythonExeBox" Grid.Row="0" Grid.Column="1"/>
+                                                    <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal" Margin="6,0,0,3">
+                                                        <Button x:Name="AiBrowsePythonBtn" Content="Browse Python" Margin="0,0,6,0" Click="AiBrowsePythonBtn_OnClick"/>
+                                                        <Button x:Name="AiUseIndexTtsUvEnvBtn" Content="Use IndexTTS2 uv Env" Click="AiUseIndexTtsUvEnvBtn_OnClick"/>
+                                                    </StackPanel>
+                                                    <Label Grid.Row="1" Grid.Column="0" Content="Repo"/>
+                                                    <TextBox x:Name="AiIndexTtsRepoBox" Grid.Row="1" Grid.Column="1"/>
+                                                    <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Margin="6,0,0,3">
+                                                        <Button Content="Browse Repo" Margin="0,0,6,0" Click="AiBrowseIndexTtsRepoBtn_OnClick"/>
+                                                        <Button x:Name="AiOpenIndexTtsRepoBtn" Content="Open Repo" Click="AiOpenIndexTtsRepoBtn_OnClick"/>
+                                                    </StackPanel>
+                                                    <TextBlock x:Name="AiRuntimeEnvStatusText" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Text="Runtime status: -" TextWrapping="Wrap" Foreground="DimGray"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Label x:Name="AiSpeakerWavLabel" Grid.Row="0" Grid.Column="0" Content="Speaker WAV"/>
+                                            <TextBox x:Name="AiSpeakerWavBox" Grid.Row="0" Grid.Column="1"/>
+                                            <Button x:Name="AiBrowseSpeakerWavBtn" Grid.Row="0" Grid.Column="2" Content="Browse" Margin="6,0,0,3" Click="AiBrowseSpeakerWavBtn_OnClick"/>
+                                            <Label x:Name="AiExistingWavLabel" Grid.Row="1" Grid.Column="0" Content="Existing WAV"/>
+                                            <TextBox x:Name="AiExistingWavBox" Grid.Row="1" Grid.Column="1"/>
+                                            <Button x:Name="AiBrowseExistingWavBtn" Grid.Row="1" Grid.Column="2" Content="Browse" Margin="6,0,0,3" Click="AiBrowseExistingWavBtn_OnClick"/>
+                                            <Label Grid.Row="2" Grid.Column="0" Content="Emotion Prompt"/>
+                                            <TextBox x:Name="AiEmotionPromptBox" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Text="开心、自然、语速适中"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </GroupBox>
+                                <Expander Header="Advanced" IsExpanded="False" Margin="0,0,0,6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Label Grid.Row="0" Grid.Column="0" Content="Model Dir"/>
+                                        <TextBox x:Name="AiIndexTtsModelDirBox" Grid.Row="0" Grid.Column="1"/>
+                                        <Button Grid.Row="0" Grid.Column="2" Content="Browse Model" Margin="6,0,0,3" Click="AiBrowseIndexTtsModelDirBtn_OnClick"/>
+                                        <Label Grid.Row="1" Grid.Column="0" Content="Config"/>
+                                        <TextBox x:Name="AiIndexTtsConfigBox" Grid.Row="1" Grid.Column="1"/>
+                                        <Button Grid.Row="1" Grid.Column="2" Content="Browse Config" Margin="6,0,0,3" Click="AiBrowseIndexTtsConfigBtn_OnClick"/>
+                                        <Label Grid.Row="2" Grid.Column="0" Content="Infer Script"/>
+                                        <TextBox x:Name="AiIndexTtsInferScriptBox" Grid.Row="2" Grid.Column="1"/>
+                                        <Button Grid.Row="2" Grid.Column="2" Content="Browse Infer" Margin="6,0,0,3" Click="AiBrowseIndexTtsInferScriptBtn_OnClick"/>
+                                        <Label Grid.Row="3" Grid.Column="0" Content="Raw Backend"/>
+                                        <ComboBox x:Name="AiTtsBackendCombo" Grid.Row="3" Grid.Column="1" Width="180" HorizontalAlignment="Left"/>
+                                        <Label Grid.Row="4" Grid.Column="0" Content="Target Duration"/>
+                                        <TextBox x:Name="AiTargetDurationBox" Grid.Row="4" Grid.Column="1" Width="100" HorizontalAlignment="Left"/>
+                                        <Label Grid.Row="5" Grid.Column="0" Content="FPS / Strength"/>
+                                        <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal">
+                                            <TextBox x:Name="AiFpsBox" Width="60" Text="30"/>
+                                            <TextBox x:Name="AiEmotionStrengthBox" Width="60" Text="0.7" Margin="8,0,0,0"/>
+                                            <CheckBox x:Name="AiBlinkEnabledCheckBox" Content="Blink" IsChecked="True" Margin="12,0,0,0"/>
+                                            <CheckBox x:Name="AiUseTimestampCheckBox" Content="Use timestamp" IsChecked="True" Margin="12,0,0,0"/>
+                                        </StackPanel>
+                                        <Label Grid.Row="6" Grid.Column="0" Content="Out Dir"/>
+                                        <TextBox x:Name="AiOutDirBox" Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"/>
+                                        <Label Grid.Row="7" Grid.Column="0" Content="Morph Map"/>
+                                        <TextBox x:Name="AiMorphMapBox" Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"/>
+                                        <Label Grid.Row="8" Grid.Column="0" Content="Skeleton Tree"/>
+                                        <TextBox x:Name="AiSkeletonTreeBox" Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"/>
+                                        <Label Grid.Row="9" Grid.Column="0" Content="Options"/>
+                                        <WrapPanel Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2">
+                                            <CheckBox x:Name="AiOfflineModeCheckBox" Content="Offline local model only" IsChecked="True" Margin="0,0,10,4"/>
+                                            <CheckBox x:Name="AiUseGeneratedLocalConfigCheckBox" Content="Use generated local config" Margin="0,0,10,4"/>
+                                            <CheckBox x:Name="AiUseFp16CheckBox" Content="UseFp16" Margin="0,0,10,4"/>
+                                            <CheckBox x:Name="AiUseCudaKernelCheckBox" Content="UseCudaKernel" Margin="0,0,10,4"/>
+                                            <CheckBox x:Name="AiUseDeepSpeedCheckBox" Content="UseDeepSpeed" Margin="0,0,10,4"/>
+                                            <CheckBox x:Name="AiUseRandomCheckBox" Content="UseRandom" Margin="0,0,10,4"/>
+                                            <CheckBox x:Name="AiFallbackToDryrunCheckBox" Content="FallbackToDryrun" Margin="0,0,10,4"/>
+                                        </WrapPanel>
+                                    </Grid>
+                                </Expander>
+                                <WrapPanel>
+                                    <Button x:Name="AiCheckModelBtn" Content="Check Setup" MinWidth="110" Margin="0,0,8,6" Click="AiCheckModelBtn_OnClick"/>
+                                    <Button x:Name="AiPatchLocalPathsBtn" Content="Patch Local Paths" MinWidth="125" Margin="0,0,8,6" Click="AiPatchLocalPathsBtn_OnClick"/>
+                                    <Button x:Name="AiGenerateBtn" Content="Generate" MinWidth="90" Margin="0,0,8,6" Click="AiGenerateBtn_OnClick"/>
+                                    <Button x:Name="AiGenerateAndPlayBtn" Content="Generate + Play" MinWidth="120" Margin="0,0,8,6" Click="AiGenerateAndPlayBtn_OnClick"/>
+                                    <Button x:Name="AiPlayExistingFramesBtn" Content="Play Last" MinWidth="85" Margin="0,0,8,6" Click="AiPlayExistingFramesBtn_OnClick"/>
+                                    <Button x:Name="AiStopPlaybackBtn" Content="Stop" MinWidth="70" Margin="0,0,8,6" Click="AiStopPlaybackBtn_OnClick"/>
+                                    <Button x:Name="AiOpenOutputFolderBtn" Content="Open Output" MinWidth="105" Margin="0,0,8,6" Click="AiOpenOutputFolderBtn_OnClick"/>
+                                    <Button x:Name="AiCopyCommandBtn" Content="Copy AI Command" MinWidth="125" Margin="0,0,8,6" Click="AiCopyCommandBtn_OnClick"/>
+                                    <Button x:Name="AiClearLogBtn" Content="Clear AI Log" MinWidth="105" Margin="0,0,8,6" Click="AiClearLogBtn_OnClick"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                        <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" Background="Transparent"/>
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <GroupBox Header="AI Status" Padding="8" Margin="0,0,0,6">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Status:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiRunStatusLabel" Grid.Row="0" Grid.Column="1" Text="Idle" Foreground="Gray"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Current stage:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiStageText" Grid.Row="1" Grid.Column="1" Text="idle"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Progress:" FontWeight="Bold"/>
+                                    <StackPanel Grid.Row="2" Grid.Column="1">
+                                        <ProgressBar x:Name="AiProgressBar" Minimum="0" Maximum="100" Height="18" Value="0"/>
+                                        <TextBlock x:Name="AiProgressText" Text="Idle" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Elapsed:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiElapsedText" Grid.Row="3" Grid.Column="1" Text="Elapsed: 00:00:00"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Heartbeat:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiHeartbeatText" Grid.Row="4" Grid.Column="1" Text="Last update: -"/>
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="UI heartbeat:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiUiHeartbeatText" Grid.Row="5" Grid.Column="1" Text="-"/>
+                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Effective config:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiEffectiveConfigLabel" Grid.Row="6" Grid.Column="1" Text="-" TextWrapping="Wrap"/>
+                                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Last wav:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiLastWavLabel" Grid.Row="7" Grid.Column="1" Text="-" TextWrapping="Wrap"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Frames:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiLastFramesLabel" Grid.Row="8" Grid.Column="1" Text="-" TextWrapping="Wrap"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Manifest:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiLastManifestLabel" Grid.Row="9" Grid.Column="1" Text="-" TextWrapping="Wrap"/>
+                                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Frame count:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiFrameCountLabel" Grid.Row="10" Grid.Column="1" Text="-"/>
+                                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Duration:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiDurationLabel" Grid.Row="11" Grid.Column="1" Text="-"/>
+                                    <TextBlock Grid.Row="12" Grid.Column="0" Text="Backend:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiTtsResolvedLabel" Grid.Row="12" Grid.Column="1" Text="-"/>
+                                    <TextBlock Grid.Row="13" Grid.Column="0" Text="Setup:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiModelCheckLabel" Grid.Row="13" Grid.Column="1" Text="-"/>
+                                    <TextBlock Grid.Row="14" Grid.Column="0" Text="Python:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiPythonStatusLabel" Grid.Row="14" Grid.Column="1" Text="-" TextWrapping="Wrap"/>
+                                    <TextBlock Grid.Row="15" Grid.Column="0" Text="Import:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiImportStatusLabel" Grid.Row="15" Grid.Column="1" Text="-"/>
+                                    <TextBlock Grid.Row="16" Grid.Column="0" Text="Playback:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiPlaybackProgressLabel" Grid.Row="16" Grid.Column="1" Text="-"/>
+                                    <TextBlock Grid.Row="17" Grid.Column="0" Text="Last error:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiLastErrorLabel" Grid.Row="17" Grid.Column="1" Text="-" Foreground="DarkRed" TextWrapping="Wrap"/>
+                                </Grid>
+                            </GroupBox>
+                            <TabControl Grid.Row="1">
+                                <TabItem Header="AI Log">
+                                    <TextBox x:Name="AiLogBox" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" TextWrapping="NoWrap" FontFamily="Consolas" FontSize="11"/>
+                                </TabItem>
+                                <TabItem Header="AI Process Output">
+                                    <TextBox x:Name="AiProcessOutputBox" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" TextWrapping="NoWrap" FontFamily="Consolas" FontSize="11"/>
+                                </TabItem>
+                                <TabItem Header="AI Manifest">
+                                    <TextBox x:Name="AiManifestBox" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" TextWrapping="NoWrap" FontFamily="Consolas" FontSize="11"/>
+                                </TabItem>
+                            </TabControl>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </DockPanel>
+</Window>

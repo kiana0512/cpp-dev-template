@@ -1,0 +1,129 @@
+# =========================================================
+# OS / IDE
+# =========================================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# =========================================================
+# Build outputs - C++ / CMake / .NET
+# =========================================================
+cmake-build-*/
+build/
+Build/
+Debug/
+Release/
+x64/
+x86/
+
+bin/
+obj/
+
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.lib
+*.a
+*.obj
+*.o
+*.so
+*.dylib
+*.exp
+*.log
+
+# =========================================================
+# Python cache / environment
+# =========================================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+.venv/
+venv/
+env/
+.conda/
+.env
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Important: do not commit third-party virtual env
+third_party/index-tts/.venv/
+
+# =========================================================
+# AI models / checkpoints / HuggingFace cache
+# =========================================================
+models/
+checkpoints/
+weights/
+pretrained/
+pretrained_models/
+hf_cache/
+huggingface/
+.cache/
+
+third_party/index-tts/checkpoints/
+third_party/index-tts/pretrained/
+third_party/index-tts/pretrained_models/
+third_party/index-tts/hf_cache/
+
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+*.bin
+*.onnx
+*.gguf
+*.t7
+*.pkl
+*.npy
+*.npz
+*.incomplete
+
+# =========================================================
+# Audio / video / generated assets
+# =========================================================
+wav/
+outputs/
+output/
+generated/
+runs/
+logs/
+tmp/
+temp/
+
+*.wav
+*.mp3
+*.flac
+*.aac
+*.ogg
+*.mp4
+*.mov
+*.avi
+*.webm
+
+# =========================================================
+# IndexTTS heavy example / demo assets
+# =========================================================
+third_party/index-tts/examples/
+third_party/index-tts/tests/
+third_party/index-tts/assets/*.mp4
+third_party/index-tts/assets/*banner*.png
+third_party/index-tts/assets/*video*.png
+
+# =========================================================
+# Local runtime generated files
+# =========================================================
+ai_runtime/outputs/
+ai_runtime/logs/
+ai_runtime/tmp/
+ai_runtime/temp/

@@ -1,0 +1,96 @@
+{
+  "version": "1.0",
+  "note": "Edit this file to customize the preset list in the WPF sender (gui_dotnet). head_pose offsets are added on top of emotion-driven defaults in expression_mapper.",
+  "presets": [
+    {
+      "name": "Greeting",
+      "text": "你好，我是Miku",
+      "emotion": "happy",
+      "phoneme": "a",
+      "rms": 0.45,
+      "confidence": 0.90,
+      "head_pose": { "pitch": 0.0, "yaw": 3.0, "roll": 0.0 }
+    },
+    {
+      "name": "Happy",
+      "text": "今天很开心",
+      "emotion": "happy",
+      "phoneme": "i",
+      "rms": 0.50,
+      "confidence": 0.92,
+      "head_pose": { "pitch": -2.0, "yaw": 0.0, "roll": 2.0 }
+    },
+    {
+      "name": "Sad",
+      "text": "我有一点难过",
+      "emotion": "sad",
+      "phoneme": "e",
+      "rms": 0.25,
+      "confidence": 0.88,
+      "head_pose": { "pitch": 0.0, "yaw": 0.0, "roll": 0.0 }
+    },
+    {
+      "name": "Angry",
+      "text": "我有点生气",
+      "emotion": "angry",
+      "phoneme": "a",
+      "rms": 0.60,
+      "confidence": 0.87,
+      "head_pose": { "pitch": -3.0, "yaw": 0.0, "roll": 0.0 }
+    },
+    {
+      "name": "Surprise",
+      "text": "哇，真的吗",
+      "emotion": "surprised",
+      "phoneme": "a",
+      "rms": 0.55,
+      "confidence": 0.91,
+      "head_pose": { "pitch": -5.0, "yaw": 0.0, "roll": 0.0 }
+    },
+    {
+      "name": "Neutral",
+      "text": "我在认真听",
+      "emotion": "neutral",
+      "phoneme": "rest",
+      "rms": 0.10,
+      "confidence": 1.00,
+      "head_pose": { "pitch": 0.0, "yaw": 0.0, "roll": 0.0 }
+    },
+    {
+      "name": "AskAgain",
+      "text": "请再说一遍",
+      "emotion": "neutral",
+      "phoneme": "e",
+      "rms": 0.30,
+      "confidence": 0.85,
+      "head_pose": { "pitch": 2.0, "yaw": 5.0, "roll": 0.0 }
+    },
+    {
+      "name": "Laugh",
+      "text": "哈哈，真有趣",
+      "emotion": "happy",
+      "phoneme": "a",
+      "rms": 0.65,
+      "confidence": 0.93,
+      "head_pose": { "pitch": -3.0, "yaw": -2.0, "roll": 3.0 }
+    },
+    {
+      "name": "Think",
+      "text": "让我想一想",
+      "emotion": "neutral",
+      "phoneme": "u",
+      "rms": 0.20,
+      "confidence": 0.80,
+      "head_pose": { "pitch": 3.0, "yaw": 8.0, "roll": 0.0 }
+    },
+    {
+      "name": "Bye",
+      "text": "再见，下次见",
+      "emotion": "happy",
+      "phoneme": "a",
+      "rms": 0.40,
+      "confidence": 0.90,
+      "head_pose": { "pitch": 0.0, "yaw": -3.0, "roll": -1.0 }
+    }
+  ]
+}

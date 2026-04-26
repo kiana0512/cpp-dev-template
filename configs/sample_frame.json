@@ -1,0 +1,42 @@
+{
+  "type": "expression_frame",
+  "version": "1.0",
+  "timestamp_ms": 1712345678901,
+  "character_id": "miku_yyb_001",
+  "sequence_id": 12,
+  "audio": {
+    "playing": true,
+    "rms": 0.42,
+    "phoneme_hint": "a"
+  },
+  "emotion": {
+    "label": "happy",
+    "confidence": 0.91
+  },
+  "blendshapes": {
+    "jawOpen":          0.38,
+    "mouthSmile":       0.72,
+    "mouthFrown":       0.00,
+    "eyeBlinkLeft":     0.05,
+    "eyeBlinkRight":    0.05,
+    "eyeSquintLeft":    0.32,
+    "eyeSquintRight":   0.32,
+    "eyeWideLeft":      0.00,
+    "eyeWideRight":     0.00,
+    "browInnerUp":      0.18,
+    "browDown":         0.00,
+    "browOuterUpLeft":  0.10,
+    "browOuterUpRight": 0.10,
+    "noseSneerLeft":    0.00,
+    "noseSneerRight":   0.00
+  },
+  "head_pose": {
+    "pitch":  0.0,
+    "yaw":   -3.0,
+    "roll":   0.0
+  },
+  "meta": {
+    "source": "demo_sender",
+    "text": "Hello, nice to meet you!"
+  }
+}

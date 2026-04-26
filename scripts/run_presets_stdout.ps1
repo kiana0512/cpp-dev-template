@@ -1,0 +1,1 @@
+& "$PSScriptRoot\run_presets.ps1" -Mode stdout

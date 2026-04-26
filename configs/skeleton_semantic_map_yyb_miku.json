@@ -1,0 +1,1096 @@
+{
+  "version": "yyb-miku-skeleton-semantic-map-v1",
+  "character": "yyb_miku",
+  "source_skeleton_tree": "D:/RT/ue5-virtual-human-bridge/configs/skeleton_tree_BP_Miku_C_UAID_D85ED3D0834367D302_1401539439_miku_mesh.json",
+  "source_actor": "{'name': 'BP_Miku_C_UAID_D85ED3D0834367D302_1401539439', 'path': '/Game/Map/miku_test.miku_test:PersistentLevel.BP_Miku_C_UAID_D85ED3D0834367D302_1401539439', 'class': 'Actor'}",
+  "source_component": "{'name': 'miku_mesh', 'path': '/Game/Map/miku_test.miku_test:PersistentLevel.BP_Miku_C_UAID_D85ED3D0834367D302_1401539439.miku_mesh', 'class': 'SkeletalMeshComponent'}",
+  "source_skinned_asset": "{'name': 'miku_ue_base', 'path': '/Game/Characters/Miku/Mesh/miku_ue_base.miku_ue_base', 'class': 'SkeletalMesh'}",
+  "bone_count": 573,
+  "root_names": [
+    "miku条纹袜_arm"
+  ],
+  "purpose": "reference_only_for_future_v2m",
+  "drive_skeleton_by_default": false,
+  "semantic_bones": {
+    "root": {
+      "bone": "miku条纹袜_arm",
+      "index": 0,
+      "path": "miku条纹袜_arm",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "miku条纹袜_arm",
+          "index": 0,
+          "path": "miku条纹袜_arm"
+        },
+        {
+          "bone": "全ての親",
+          "index": 1,
+          "path": "miku条纹袜_arm/全ての親"
+        },
+        {
+          "bone": "操作中心",
+          "index": 571,
+          "path": "miku条纹袜_arm/操作中心"
+        },
+        {
+          "bone": "default",
+          "index": 572,
+          "path": "miku条纹袜_arm/default"
+        },
+        {
+          "bone": "センター",
+          "index": 2,
+          "path": "miku条纹袜_arm/全ての親/センター"
+        },
+        {
+          "bone": "足IK親_R",
+          "index": 565,
+          "path": "miku条纹袜_arm/全ての親/足IK親_R"
+        },
+        {
+          "bone": "足IK親_L",
+          "index": 568,
+          "path": "miku条纹袜_arm/全ての親/足IK親_L"
+        },
+        {
+          "bone": "グルーブ",
+          "index": 3,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ"
+        }
+      ],
+      "reason": "exact name match: miku条纹袜_arm"
+    },
+    "global_root": {
+      "bone": "全ての親",
+      "index": 1,
+      "path": "miku条纹袜_arm/全ての親",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "全ての親",
+          "index": 1,
+          "path": "miku条纹袜_arm/全ての親"
+        },
+        {
+          "bone": "全ての親A",
+          "index": 300,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A"
+        },
+        {
+          "bone": "センター",
+          "index": 2,
+          "path": "miku条纹袜_arm/全ての親/センター"
+        },
+        {
+          "bone": "足IK親_R",
+          "index": 565,
+          "path": "miku条纹袜_arm/全ての親/足IK親_R"
+        },
+        {
+          "bone": "足IK親_L",
+          "index": 568,
+          "path": "miku条纹袜_arm/全ての親/足IK親_L"
+        },
+        {
+          "bone": "グルーブ",
+          "index": 3,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ"
+        },
+        {
+          "bone": "足ＩＫ_R",
+          "index": 566,
+          "path": "miku条纹袜_arm/全ての親/足IK親_R/足ＩＫ_R"
+        },
+        {
+          "bone": "足ＩＫ_L",
+          "index": 569,
+          "path": "miku条纹袜_arm/全ての親/足IK親_L/足ＩＫ_L"
+        }
+      ],
+      "reason": "exact name match: 全ての親"
+    },
+    "center": {
+      "bone": "センター",
+      "index": 2,
+      "path": "miku条纹袜_arm/全ての親/センター",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "センター",
+          "index": 2,
+          "path": "miku条纹袜_arm/全ての親/センター"
+        },
+        {
+          "bone": "グルーブ",
+          "index": 3,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ"
+        },
+        {
+          "bone": "腰",
+          "index": 4,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰"
+        },
+        {
+          "bone": "上半身",
+          "index": 5,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身"
+        },
+        {
+          "bone": "下半身",
+          "index": 546,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/下半身"
+        },
+        {
+          "bone": "上半身2",
+          "index": 6,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2"
+        },
+        {
+          "bone": "全ての親A",
+          "index": 300,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A"
+        },
+        {
+          "bone": "qz_0_0",
+          "index": 316,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/qz_0_0"
+        }
+      ],
+      "reason": "exact name match: センター"
+    },
+    "groove": {
+      "bone": "グルーブ",
+      "index": 3,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "グルーブ",
+          "index": 3,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ"
+        },
+        {
+          "bone": "腰",
+          "index": 4,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰"
+        },
+        {
+          "bone": "上半身",
+          "index": 5,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身"
+        },
+        {
+          "bone": "下半身",
+          "index": 546,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/下半身"
+        },
+        {
+          "bone": "上半身2",
+          "index": 6,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2"
+        },
+        {
+          "bone": "全ての親A",
+          "index": 300,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A"
+        },
+        {
+          "bone": "qz_0_0",
+          "index": 316,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/qz_0_0"
+        },
+        {
+          "bone": "qz_0_1",
+          "index": 326,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/qz_0_1"
+        }
+      ],
+      "reason": "exact name match: グルーブ"
+    },
+    "waist": {
+      "bone": "腰",
+      "index": 4,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "腰",
+          "index": 4,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰"
+        },
+        {
+          "bone": "腰キャンセル_R",
+          "index": 547,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/下半身/腰キャンセル_R"
+        },
+        {
+          "bone": "腰キャンセル_L",
+          "index": 556,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/下半身/腰キャンセル_L"
+        },
+        {
+          "bone": "腰A",
+          "index": 301,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A/腰A"
+        },
+        {
+          "bone": "上半身",
+          "index": 5,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身"
+        },
+        {
+          "bone": "下半身",
+          "index": 546,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/下半身"
+        },
+        {
+          "bone": "上半身2",
+          "index": 6,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2"
+        },
+        {
+          "bone": "全ての親A",
+          "index": 300,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A"
+        }
+      ],
+      "reason": "exact name match: 腰"
+    },
+    "pelvis": {
+      "bone": "腰",
+      "index": 4,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "腰",
+          "index": 4,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰"
+        },
+        {
+          "bone": "腰キャンセル_R",
+          "index": 547,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/下半身/腰キャンセル_R"
+        },
+        {
+          "bone": "腰キャンセル_L",
+          "index": 556,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/下半身/腰キャンセル_L"
+        },
+        {
+          "bone": "腰A",
+          "index": 301,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A/腰A"
+        },
+        {
+          "bone": "上半身",
+          "index": 5,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身"
+        },
+        {
+          "bone": "下半身",
+          "index": 546,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/下半身"
+        },
+        {
+          "bone": "上半身2",
+          "index": 6,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2"
+        },
+        {
+          "bone": "全ての親A",
+          "index": 300,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A"
+        }
+      ],
+      "reason": "exact name match: 腰"
+    },
+    "spine": {
+      "bone": "上半身",
+      "index": 5,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "上半身",
+          "index": 5,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身"
+        },
+        {
+          "bone": "上半身2",
+          "index": 6,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2"
+        },
+        {
+          "bone": "上半身A",
+          "index": 309,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A/腰A/上半身A"
+        },
+        {
+          "bone": "全ての親A",
+          "index": 300,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A"
+        },
+        {
+          "bone": "qz_0_0",
+          "index": 316,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/qz_0_0"
+        },
+        {
+          "bone": "qz_0_1",
+          "index": 326,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/qz_0_1"
+        },
+        {
+          "bone": "qz_0_2",
+          "index": 336,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/qz_0_2"
+        },
+        {
+          "bone": "qz_0_3",
+          "index": 346,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/qz_0_3"
+        }
+      ],
+      "reason": "exact name match: 上半身"
+    },
+    "upper_body": {
+      "bone": "上半身",
+      "index": 5,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "上半身",
+          "index": 5,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身"
+        },
+        {
+          "bone": "上半身2",
+          "index": 6,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2"
+        },
+        {
+          "bone": "上半身A",
+          "index": 309,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A/腰A/上半身A"
+        },
+        {
+          "bone": "全ての親A",
+          "index": 300,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A"
+        },
+        {
+          "bone": "qz_0_0",
+          "index": 316,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/qz_0_0"
+        },
+        {
+          "bone": "qz_0_1",
+          "index": 326,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/qz_0_1"
+        },
+        {
+          "bone": "qz_0_2",
+          "index": 336,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/qz_0_2"
+        },
+        {
+          "bone": "qz_0_3",
+          "index": 346,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/qz_0_3"
+        }
+      ],
+      "reason": "exact name match: 上半身"
+    },
+    "chest": {
+      "bone": "上半身2",
+      "index": 6,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "上半身2",
+          "index": 6,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2"
+        },
+        {
+          "bone": "胸_R",
+          "index": 7,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/胸_R"
+        },
+        {
+          "bone": "胸_L",
+          "index": 8,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/胸_L"
+        },
+        {
+          "bone": "首",
+          "index": 9,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首"
+        },
+        {
+          "bone": "肩P_R",
+          "index": 206,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R"
+        },
+        {
+          "bone": "肩P_L",
+          "index": 246,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L"
+        },
+        {
+          "bone": "ld_0_1",
+          "index": 286,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/ld_0_1"
+        },
+        {
+          "bone": "頭",
+          "index": 10,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭"
+        }
+      ],
+      "reason": "exact name match: 上半身2"
+    },
+    "upper_body2": {
+      "bone": "上半身2",
+      "index": 6,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "上半身2",
+          "index": 6,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2"
+        },
+        {
+          "bone": "胸_R",
+          "index": 7,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/胸_R"
+        },
+        {
+          "bone": "胸_L",
+          "index": 8,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/胸_L"
+        },
+        {
+          "bone": "首",
+          "index": 9,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首"
+        },
+        {
+          "bone": "肩P_R",
+          "index": 206,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R"
+        },
+        {
+          "bone": "肩P_L",
+          "index": 246,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L"
+        },
+        {
+          "bone": "ld_0_1",
+          "index": 286,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/ld_0_1"
+        },
+        {
+          "bone": "頭",
+          "index": 10,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭"
+        }
+      ],
+      "reason": "exact name match: 上半身2"
+    },
+    "neck": {
+      "bone": "首",
+      "index": 9,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "首",
+          "index": 9,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首"
+        },
+        {
+          "bone": "足首_R",
+          "index": 550,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/下半身/腰キャンセル_R/足_R/ひざ_R/足首_R"
+        },
+        {
+          "bone": "足首D_R",
+          "index": 554,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/下半身/腰キャンセル_R/足D_R/ひざD_R/足首D_R"
+        },
+        {
+          "bone": "足首_L",
+          "index": 559,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/下半身/腰キャンセル_L/足_L/ひざ_L/足首_L"
+        },
+        {
+          "bone": "足首D_L",
+          "index": 563,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/下半身/腰キャンセル_L/足D_L/ひざD_L/足首D_L"
+        },
+        {
+          "bone": "手首_R",
+          "index": 215,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R"
+        },
+        {
+          "bone": "手首_L",
+          "index": 255,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L"
+        },
+        {
+          "bone": "頭",
+          "index": 10,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭"
+        }
+      ],
+      "reason": "exact name match: 首"
+    },
+    "head": {
+      "bone": "頭",
+      "index": 10,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "頭",
+          "index": 10,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭"
+        },
+        {
+          "bone": "頭A",
+          "index": 310,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A/腰A/上半身A/頭A"
+        },
+        {
+          "bone": "頭A1",
+          "index": 311,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/全ての親A/腰A/上半身A/頭A/頭A1"
+        },
+        {
+          "bone": "目_R",
+          "index": 11,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/目_R"
+        },
+        {
+          "bone": "目_L",
+          "index": 13,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/目_L"
+        },
+        {
+          "bone": "両目",
+          "index": 15,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/両目"
+        },
+        {
+          "bone": "舌１",
+          "index": 16,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/舌１"
+        },
+        {
+          "bone": "前髪1",
+          "index": 19,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/前髪1"
+        }
+      ],
+      "reason": "exact name match: 頭"
+    },
+    "left_eye": {
+      "bone": "目_L",
+      "index": 13,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/目_L",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "目_L",
+          "index": 13,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/目_L"
+        },
+        {
+          "bone": "hl_L",
+          "index": 14,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/目_L/hl_L"
+        }
+      ],
+      "reason": "exact name match: 目_L"
+    },
+    "right_eye": {
+      "bone": "目_R",
+      "index": 11,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/目_R",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "目_R",
+          "index": 11,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/目_R"
+        },
+        {
+          "bone": "hl_R",
+          "index": 12,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/目_R/hl_R"
+        }
+      ],
+      "reason": "exact name match: 目_R"
+    },
+    "tongue_1": {
+      "bone": "舌１",
+      "index": 16,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/舌１",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "舌１",
+          "index": 16,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/舌１"
+        },
+        {
+          "bone": "舌２",
+          "index": 17,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/舌１/舌２"
+        },
+        {
+          "bone": "舌３",
+          "index": 18,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/舌１/舌２/舌３"
+        }
+      ],
+      "reason": "exact name match: 舌１"
+    },
+    "tongue_2": {
+      "bone": "舌２",
+      "index": 17,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/舌１/舌２",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "舌２",
+          "index": 17,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/舌１/舌２"
+        },
+        {
+          "bone": "舌３",
+          "index": 18,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/舌１/舌２/舌３"
+        }
+      ],
+      "reason": "exact name match: 舌２"
+    },
+    "tongue_3": {
+      "bone": "舌３",
+      "index": 18,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/舌１/舌２/舌３",
+      "confidence": 1.0,
+      "candidates": [
+        {
+          "bone": "舌３",
+          "index": 18,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/首/頭/舌１/舌２/舌３"
+        }
+      ],
+      "reason": "exact name match: 舌３"
+    },
+    "left_shoulder": {
+      "bone": "肩_L",
+      "index": 247,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L",
+      "confidence": 0.92,
+      "candidates": [
+        {
+          "bone": "肩_L",
+          "index": 247,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L"
+        },
+        {
+          "bone": "肩C_L",
+          "index": 248,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L"
+        },
+        {
+          "bone": "腕_L",
+          "index": 249,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L"
+        },
+        {
+          "bone": "腕捩_L",
+          "index": 250,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L"
+        },
+        {
+          "bone": "腕捩1_L",
+          "index": 283,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩1_L"
+        },
+        {
+          "bone": "腕捩2_L",
+          "index": 284,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩2_L"
+        },
+        {
+          "bone": "腕捩3_L",
+          "index": 285,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩3_L"
+        },
+        {
+          "bone": "ひじ補助_L",
+          "index": 251,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ補助_L"
+        }
+      ],
+      "reason": "name keyword match: 肩_l"
+    },
+    "right_shoulder": {
+      "bone": "肩_R",
+      "index": 207,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R",
+      "confidence": 0.92,
+      "candidates": [
+        {
+          "bone": "肩_R",
+          "index": 207,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R"
+        },
+        {
+          "bone": "肩C_R",
+          "index": 208,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R"
+        },
+        {
+          "bone": "腕_R",
+          "index": 209,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R"
+        },
+        {
+          "bone": "腕捩_R",
+          "index": 210,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R"
+        },
+        {
+          "bone": "腕捩1_R",
+          "index": 243,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩1_R"
+        },
+        {
+          "bone": "腕捩2_R",
+          "index": 244,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩2_R"
+        },
+        {
+          "bone": "腕捩3_R",
+          "index": 245,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩3_R"
+        },
+        {
+          "bone": "ひじ補助_R",
+          "index": 211,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ補助_R"
+        }
+      ],
+      "reason": "name keyword match: 肩_r"
+    },
+    "left_arm": {
+      "bone": "腕_L",
+      "index": 249,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L",
+      "confidence": 0.92,
+      "candidates": [
+        {
+          "bone": "腕_L",
+          "index": 249,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L"
+        },
+        {
+          "bone": "腕捩_L",
+          "index": 250,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L"
+        },
+        {
+          "bone": "腕捩1_L",
+          "index": 283,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩1_L"
+        },
+        {
+          "bone": "腕捩2_L",
+          "index": 284,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩2_L"
+        },
+        {
+          "bone": "腕捩3_L",
+          "index": 285,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩3_L"
+        },
+        {
+          "bone": "ひじ補助_L",
+          "index": 251,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ補助_L"
+        },
+        {
+          "bone": "ひじ_L",
+          "index": 253,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L"
+        },
+        {
+          "bone": "ひじ補助__L",
+          "index": 252,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ補助_L/ひじ補助__L"
+        }
+      ],
+      "reason": "name keyword match: 腕_l"
+    },
+    "right_arm": {
+      "bone": "腕_R",
+      "index": 209,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R",
+      "confidence": 0.92,
+      "candidates": [
+        {
+          "bone": "腕_R",
+          "index": 209,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R"
+        },
+        {
+          "bone": "腕捩_R",
+          "index": 210,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R"
+        },
+        {
+          "bone": "腕捩1_R",
+          "index": 243,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩1_R"
+        },
+        {
+          "bone": "腕捩2_R",
+          "index": 244,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩2_R"
+        },
+        {
+          "bone": "腕捩3_R",
+          "index": 245,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩3_R"
+        },
+        {
+          "bone": "ひじ補助_R",
+          "index": 211,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ補助_R"
+        },
+        {
+          "bone": "ひじ_R",
+          "index": 213,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R"
+        },
+        {
+          "bone": "ひじ補助__R",
+          "index": 212,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ補助_R/ひじ補助__R"
+        }
+      ],
+      "reason": "name keyword match: 腕_r"
+    },
+    "left_elbow": {
+      "bone": "ひじ_L",
+      "index": 253,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L",
+      "confidence": 0.92,
+      "candidates": [
+        {
+          "bone": "ひじ_L",
+          "index": 253,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L"
+        },
+        {
+          "bone": "手捩_L",
+          "index": 254,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L"
+        },
+        {
+          "bone": "手捩1_L",
+          "index": 280,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩1_L"
+        },
+        {
+          "bone": "手捩2_L",
+          "index": 281,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩2_L"
+        },
+        {
+          "bone": "手捩3_L",
+          "index": 282,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩3_L"
+        },
+        {
+          "bone": "手首_L",
+          "index": 255,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L"
+        },
+        {
+          "bone": "ダミー_L",
+          "index": 256,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L/ダミー_L"
+        },
+        {
+          "bone": "手先_L",
+          "index": 257,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L/手先_L"
+        }
+      ],
+      "reason": "name keyword match: ひじ_l"
+    },
+    "right_elbow": {
+      "bone": "ひじ_R",
+      "index": 213,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R",
+      "confidence": 0.92,
+      "candidates": [
+        {
+          "bone": "ひじ_R",
+          "index": 213,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R"
+        },
+        {
+          "bone": "手捩_R",
+          "index": 214,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R"
+        },
+        {
+          "bone": "手捩1_R",
+          "index": 240,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩1_R"
+        },
+        {
+          "bone": "手捩2_R",
+          "index": 241,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩2_R"
+        },
+        {
+          "bone": "手捩3_R",
+          "index": 242,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩3_R"
+        },
+        {
+          "bone": "手首_R",
+          "index": 215,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R"
+        },
+        {
+          "bone": "ダミー_R",
+          "index": 216,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R/ダミー_R"
+        },
+        {
+          "bone": "手先_R",
+          "index": 217,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R/手先_R"
+        }
+      ],
+      "reason": "name keyword match: ひじ_r"
+    },
+    "left_wrist": {
+      "bone": "手首_L",
+      "index": 255,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L",
+      "confidence": 0.92,
+      "candidates": [
+        {
+          "bone": "手首_L",
+          "index": 255,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L"
+        },
+        {
+          "bone": "ダミー_L",
+          "index": 256,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L/ダミー_L"
+        },
+        {
+          "bone": "手先_L",
+          "index": 257,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L/手先_L"
+        },
+        {
+          "bone": "親指０_L",
+          "index": 258,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L/親指０_L"
+        },
+        {
+          "bone": "小指０_L",
+          "index": 262,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L/小指０_L"
+        },
+        {
+          "bone": "薬指０_L",
+          "index": 267,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L/薬指０_L"
+        },
+        {
+          "bone": "中指１_L",
+          "index": 272,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L/中指１_L"
+        },
+        {
+          "bone": "人指１_L",
+          "index": 276,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_L/肩_L/肩C_L/腕_L/腕捩_L/ひじ_L/手捩_L/手首_L/人指１_L"
+        }
+      ],
+      "reason": "name keyword match: 手首_l"
+    },
+    "right_wrist": {
+      "bone": "手首_R",
+      "index": 215,
+      "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R",
+      "confidence": 0.92,
+      "candidates": [
+        {
+          "bone": "手首_R",
+          "index": 215,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R"
+        },
+        {
+          "bone": "ダミー_R",
+          "index": 216,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R/ダミー_R"
+        },
+        {
+          "bone": "手先_R",
+          "index": 217,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R/手先_R"
+        },
+        {
+          "bone": "親指０_R",
+          "index": 218,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R/親指０_R"
+        },
+        {
+          "bone": "小指０_R",
+          "index": 222,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R/小指０_R"
+        },
+        {
+          "bone": "薬指０_R",
+          "index": 227,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R/薬指０_R"
+        },
+        {
+          "bone": "中指１_R",
+          "index": 232,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R/中指１_R"
+        },
+        {
+          "bone": "人指１_R",
+          "index": 236,
+          "path": "miku条纹袜_arm/全ての親/センター/グルーブ/腰/上半身/上半身2/肩P_R/肩_R/肩C_R/腕_R/腕捩_R/ひじ_R/手捩_R/手首_R/人指１_R"
+        }
+      ],
+      "reason": "name keyword match: 手首_r"
+    }
+  },
+  "warnings": [],
+  "note": [
+    "This file is only for later V2M / Control Rig / AnimBP work.",
+    "Current AI runtime still drives Morph Target only."
+  ]
+}

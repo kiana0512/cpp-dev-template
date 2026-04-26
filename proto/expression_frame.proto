@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package vh;
+
+message AudioState {
+  bool playing = 1;
+  double rms = 2;
+  string phoneme_hint = 3;
+}
+
+message EmotionState {
+  string label = 1;
+  double confidence = 2;
+}
+
+message BlendshapeWeight {
+  string name = 1;
+  double value = 2;
+}
+
+message HeadPose {
+  double pitch = 1;
+  double yaw = 2;
+  double roll = 3;
+}
+
+message MetaInfo {
+  string source = 1;
+  string text = 2;
+}
+
+message ExpressionFrame {
+  string type = 1;
+  string version = 2;
+  uint64 timestamp_ms = 3;
+  string character_id = 4;
+  uint64 sequence_id = 5;
+  AudioState audio = 6;
+  EmotionState emotion = 7;
+  repeated BlendshapeWeight blendshapes = 8;
+  HeadPose head_pose = 9;
+  MetaInfo meta = 10;
+}
+
+message Ack {
+  bool ok = 1;
+  string message = 2;
+}
+
+service VirtualHumanStream {
+  rpc PushFrame(ExpressionFrame) returns (Ack);
+  rpc PushFrameStream(stream ExpressionFrame) returns (Ack);
+}

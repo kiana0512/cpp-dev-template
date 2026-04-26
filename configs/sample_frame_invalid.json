@@ -1,0 +1,29 @@
+{
+  "type": "expression_frame",
+  "version": "1.0",
+  "timestamp_ms": 1712345678901,
+  "character_id": "",
+  "sequence_id": 12,
+  "audio": {
+    "playing": true,
+    "rms": 1.42,
+    "phoneme_hint": "a"
+  },
+  "emotion": {
+    "label": "happy",
+    "confidence": -0.1
+  },
+  "blendshapes": {
+    "jawOpen": 1.38,
+    "mouthSmile": 0.72
+  },
+  "head_pose": {
+    "pitch": 120.0,
+    "yaw": -4.2,
+    "roll": 0.0
+  },
+  "meta": {
+    "source": "demo_invalid",
+    "text": "invalid"
+  }
+}

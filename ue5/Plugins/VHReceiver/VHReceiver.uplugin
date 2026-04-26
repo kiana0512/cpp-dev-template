@@ -1,0 +1,24 @@
+{
+    "FileVersion": 3,
+    "Version": 1,
+    "VersionName": "1.0",
+    "FriendlyName": "VH Receiver",
+    "Description": "Receives ExpressionFrame JSON packets over TCP and drives Skeletal Mesh morph targets in real time.",
+    "Category": "Virtual Human",
+    "CreatedBy": "aigc_game_cli demo",
+    "CreatedByURL": "",
+    "DocsURL": "",
+    "MarketplaceURL": "",
+    "SupportURL": "",
+    "CanContainContent": false,
+    "IsBetaVersion": true,
+    "IsExperimentalVersion": false,
+    "Installed": false,
+    "Modules": [
+        {
+            "Name": "VHReceiver",
+            "Type": "Runtime",
+            "LoadingPhase": "Default"
+        }
+    ]
+}
