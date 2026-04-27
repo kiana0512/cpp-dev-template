@@ -8,7 +8,9 @@ param(
     [double]$Fps = 30,
     [string]$CharacterId = "yyb_miku",
     [ValidateSet("auto", "indextts2", "indextts2_local_cli", "indextts2_local_api", "indextts_legacy", "dryrun")]
-    [string]$TtsBackend = "auto",
+    [string]$TtsBackend = "indextts2_local_cli",
+    [ValidateSet("auto", "fallback", "wetext")]
+    [string]$TextNormalizer = "fallback",
     [switch]$DryRun,
     [switch]$SkipTts,
     [string]$Wav = "",
@@ -38,7 +40,7 @@ $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..")
 Set-Location $RepoRoot
 
 if ([string]::IsNullOrWhiteSpace($PythonExe)) {
-    $venvPy = Join-Path $RepoRoot ".venv\Scripts\python.exe"
+    $venvPy = Join-Path $RepoRoot "third_party\index-tts\.venv\Scripts\python.exe"
     if (Test-Path -LiteralPath $venvPy) {
         $PythonExe = $venvPy
     } else {
@@ -61,6 +63,7 @@ if ([string]::IsNullOrWhiteSpace($SkeletonTree)) {
 Write-Host "[AI][INFO] RepoRoot          = $RepoRoot"
 Write-Host "[AI][INFO] PythonExe         = $PythonExe"
 Write-Host "[AI][INFO] TTS backend       = $TtsBackend"
+Write-Host "[AI][INFO] Text normalizer   = $TextNormalizer"
 Write-Host "[AI][INFO] Model dir         = $IndexTtsModelDir"
 Write-Host "[AI][INFO] Config            = $IndexTtsConfig"
 Write-Host "[AI][INFO] Config exists     = $(Test-Path -LiteralPath $IndexTtsConfig)"
@@ -68,7 +71,7 @@ Write-Host "[AI][INFO] IndexTTS repo     = $IndexTtsRepo"
 Write-Host "[AI][INFO] Speaker WAV       = $DefaultSpeakerWav"
 Write-Host "[AI][INFO] OutDir            = $OutDir"
 
-if ($TtsBackend -eq "indextts2_local_api" -and -not $DefaultSpeakerWav -and -not $SpeakerWav -and -not $DryRun) {
+if ($TtsBackend -ne "dryrun" -and -not $DefaultSpeakerWav -and -not $SpeakerWav -and -not $DryRun -and -not $SkipTts) {
     Write-Host "[AI][ERROR] Real IndexTTS2 requires -DefaultSpeakerWav or -SpeakerWav."
     exit 2
 }
@@ -113,6 +116,7 @@ $argsList = @(
     "--character-id", $CharacterId,
     "--morph-map", $MorphMap,
     "--tts-backend", $TtsBackend,
+    "--text-normalizer", $TextNormalizer,
     "--indextts-model-dir", $IndexTtsModelDir,
     "--indextts-config", $IndexTtsConfig
 )

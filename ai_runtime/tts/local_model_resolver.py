@@ -10,6 +10,8 @@ class LocalModelReport:
     index_tts2_ok: bool
     w2v_bert_ok: bool
     maskgct_ok: bool
+    campplus_ok: bool
+    bigvgan_ok: bool
     can_run_offline: bool
     looks_local_complete: bool
     remote_references: list[str] = field(default_factory=list)
@@ -22,6 +24,8 @@ class LocalModelReport:
             "index_tts2_ok": self.index_tts2_ok,
             "w2v_bert_ok": self.w2v_bert_ok,
             "maskgct_ok": self.maskgct_ok,
+            "campplus_ok": self.campplus_ok,
+            "bigvgan_ok": self.bigvgan_ok,
             "can_run_offline": self.can_run_offline,
             "looks_local_complete": self.looks_local_complete,
             "remote_references": self.remote_references,
@@ -45,7 +49,7 @@ def analyze_indextts2_local_paths(config_path: Path, model_dir: Path) -> LocalMo
         missing.append("config.yaml")
         warnings.append(f"Config file missing: {config_path}")
         recs.append("Ensure models/IndexTTS-2/config.yaml exists.")
-        return LocalModelReport(False, False, False, False, False, remote_refs, missing, warnings, recs)
+        return LocalModelReport(False, False, False, False, False, False, False, remote_refs, missing, warnings, recs)
 
     config_text = _read_text(config_path)
     lower = config_text.lower()
@@ -105,11 +109,36 @@ def analyze_indextts2_local_paths(config_path: Path, model_dir: Path) -> LocalMo
             missing.append(rel)
             mask_missing.append(rel)
 
+    campplus_missing: list[str] = []
+    for rel in ["campplus", "campplus/campplus_cn_common.bin"]:
+        if not (model_dir / rel).exists():
+            missing.append(rel)
+            campplus_missing.append(rel)
+
+    bigvgan_missing: list[str] = []
+    bigvgan_config = model_dir / "BigVGAN" / "config.json"
+    if not bigvgan_config.exists():
+        missing.append("BigVGAN/config.json")
+        bigvgan_missing.append("BigVGAN/config.json")
+    else:
+        try:
+            import json
+
+            num_mels = json.loads(bigvgan_config.read_text(encoding="utf-8")).get("num_mels")
+            if num_mels != 80:
+                missing.append(f"BigVGAN/config.json num_mels={num_mels}, expected 80")
+                bigvgan_missing.append("BigVGAN/config.json num_mels must be 80")
+        except Exception as exc:
+            warnings.append(f"Could not verify BigVGAN num_mels: {exc}")
+            bigvgan_missing.append("BigVGAN/config.json unreadable")
+
     index_ok = len(main_missing) == 0
     w2v_ok = len(w2v_missing) == 0 and w2v_dir.exists()
     mask_ok = len(mask_missing) == 0
+    campplus_ok = len(campplus_missing) == 0
+    bigvgan_ok = len(bigvgan_missing) == 0
     looks_complete = len(missing) == 0
-    can_run_offline = index_ok and w2v_ok and mask_ok and not remote_refs
+    can_run_offline = index_ok and w2v_ok and mask_ok and campplus_ok and bigvgan_ok and not remote_refs
     if remote_refs:
         warnings.append("Config may still contain remote HF references.")
         recs.append("Prefer local absolute paths for qwen and wav2vec files.")
@@ -119,11 +148,17 @@ def analyze_indextts2_local_paths(config_path: Path, model_dir: Path) -> LocalMo
         recs.append("Local dependency missing: w2v-bert-2.0. Run: modelscope download --model AI-ModelScope/w2v-bert-2.0 --local_dir .\\models\\IndexTTS-2\\w2v-bert-2.0")
     if not mask_ok:
         recs.append("Local dependency missing: MaskGCT. Run: modelscope download --model amphion/MaskGCT --local_dir .\\models\\IndexTTS-2\\MaskGCT")
+    if not campplus_ok:
+        recs.append("Local dependency missing: campplus. Verify models\\IndexTTS-2\\campplus\\campplus_cn_common.bin.")
+    if not bigvgan_ok:
+        recs.append("BigVGAN must be an 80-band model. Verify models\\IndexTTS-2\\BigVGAN\\config.json has num_mels=80.")
 
     return LocalModelReport(
         index_tts2_ok=index_ok,
         w2v_bert_ok=w2v_ok,
         maskgct_ok=mask_ok,
+        campplus_ok=campplus_ok,
+        bigvgan_ok=bigvgan_ok,
         can_run_offline=can_run_offline,
         looks_local_complete=looks_complete,
         remote_references=sorted(set(remote_refs)),

@@ -15,6 +15,7 @@ Thumbs.db
 # =========================================================
 cmake-build-*/
 build/
+dist/
 Build/
 Debug/
 Release/
@@ -23,6 +24,10 @@ x86/
 
 bin/
 obj/
+gui_dotnet/bin/
+gui_dotnet/obj/
+gui_dotnet/obj_codex/
+gui_dotnet/obj_codex_test/
 
 *.exe
 *.dll
@@ -46,10 +51,12 @@ __pycache__/
 *.pyd
 
 .venv/
+.venv-cpython/
 venv/
 env/
 .conda/
 .env
+tmp_spm_test/
 
 .pytest_cache/
 .mypy_cache/
@@ -72,6 +79,7 @@ huggingface/
 .cache/
 
 third_party/index-tts/checkpoints/
+third_party/index-tts/.venv-cpython/
 third_party/index-tts/pretrained/
 third_party/index-tts/pretrained_models/
 third_party/index-tts/hf_cache/
@@ -95,12 +103,18 @@ third_party/index-tts/hf_cache/
 wav/
 outputs/
 output/
+output/ai_sessions/
+output/skeleton_analysis/
+output/*.jsonl
+output/*.wav
+output/*.log
 generated/
 runs/
 logs/
 tmp/
 temp/
 
+*.jsonl
 *.wav
 *.mp3
 *.flac

@@ -20,9 +20,15 @@ public static class AiRuntimeModelCheckService
         "cas-bridge.xethub.hf.co",
     ];
 
-    public static AiModelCheckResult Check(string modelDir, string configPath, string? indexTtsRepo = null)
+    public static AiModelCheckResult Check(string modelDir, string configPath, string? indexTtsRepo = null, string textNormalizer = "fallback")
     {
         var result = new AiModelCheckResult();
+        result.TextNormalizerMode = NormalizeTextNormalizerMode(textNormalizer);
+        if (result.TextNormalizerMode == "fallback")
+        {
+            result.WeTextImportStatus = "skipped";
+            result.KaldiFstImportStatus = "skipped";
+        }
         result.ModelDirExists = Directory.Exists(modelDir);
         result.ConfigExists = File.Exists(configPath);
         if (!result.ModelDirExists)
@@ -60,6 +66,14 @@ public static class AiRuntimeModelCheckService
                 CheckExact(result, modelDir, Path.Combine("MaskGCT", "t2s_model", "model.safetensors")) &
                 CheckExact(result, modelDir, Path.Combine("MaskGCT", "s2a_model", "s2a_model_1layer", "model.safetensors")) &
                 CheckExact(result, modelDir, Path.Combine("MaskGCT", "s2a_model", "s2a_model_full", "model.safetensors"));
+
+            result.CampplusOk =
+                CheckExact(result, modelDir, "campplus") &
+                CheckExact(result, modelDir, Path.Combine("campplus", "campplus_cn_common.bin"));
+
+            result.BigVganOk =
+                CheckExact(result, modelDir, Path.Combine("BigVGAN", "config.json")) &&
+                CheckBigVganNumMels(result, Path.Combine(modelDir, "BigVGAN", "config.json"));
         }
 
         if (result.ConfigExists)
@@ -81,7 +95,7 @@ public static class AiRuntimeModelCheckService
         }
 
         result.LooksComplete = result.ModelDirExists && result.ConfigExists && result.IndexTts2Ok;
-        result.LooksLocalComplete = result.LooksComplete && result.W2vBertOk && result.MaskGctOk && result.RemoteRefsOk;
+        result.LooksLocalComplete = result.LooksComplete && result.W2vBertOk && result.MaskGctOk && result.CampplusOk && result.BigVganOk && result.RemoteRefsOk;
         result.CanRunOffline = result.LooksLocalComplete;
         result.Recommendation = "If config.yaml is missing, wait for download or run: modelscope download --model IndexTeam/IndexTTS-2 --local_dir .\\models\\IndexTTS-2";
         result.Recommendations.Add(result.Recommendation);
@@ -89,7 +103,17 @@ public static class AiRuntimeModelCheckService
             result.Recommendations.Add("Local dependency missing: w2v-bert-2.0. Run: modelscope download --model AI-ModelScope/w2v-bert-2.0 --local_dir .\\models\\IndexTTS-2\\w2v-bert-2.0");
         if (!result.MaskGctOk)
             result.Recommendations.Add("Local dependency missing: MaskGCT. Run: modelscope download --model amphion/MaskGCT --local_dir .\\models\\IndexTTS-2\\MaskGCT");
+        if (!result.CampplusOk)
+            result.Recommendations.Add("Local dependency missing: campplus. Verify .\\models\\IndexTTS-2\\campplus\\campplus_cn_common.bin");
+        if (!result.BigVganOk)
+            result.Recommendations.Add("BigVGAN must be 80-band. Verify .\\models\\IndexTTS-2\\BigVGAN\\config.json has num_mels=80.");
         return result;
+    }
+
+    private static string NormalizeTextNormalizerMode(string? value)
+    {
+        var mode = string.IsNullOrWhiteSpace(value) ? "fallback" : value.Trim().ToLowerInvariant();
+        return mode is "auto" or "fallback" or "wetext" ? mode : "fallback";
     }
 
     private static bool CheckExact(AiModelCheckResult result, string modelDir, string relativePath)
@@ -118,6 +142,25 @@ public static class AiRuntimeModelCheckService
         }
         result.MissingOrSuspiciousFiles.Add(label);
         result.Warnings.Add("Missing local file group: " + label);
+        return false;
+    }
+
+    private static bool CheckBigVganNumMels(AiModelCheckResult result, string configPath)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(configPath, Encoding.UTF8));
+            if (doc.RootElement.TryGetProperty("num_mels", out var numMels) && numMels.GetInt32() == 80)
+                return true;
+            var value = doc.RootElement.TryGetProperty("num_mels", out numMels) ? numMels.ToString() : "missing";
+            result.MissingOrSuspiciousFiles.Add("BigVGAN/config.json num_mels=" + value + " expected 80");
+            result.Warnings.Add("BigVGAN must be 80-band; current num_mels=" + value);
+        }
+        catch (Exception ex)
+        {
+            result.MissingOrSuspiciousFiles.Add("BigVGAN/config.json unreadable");
+            result.Warnings.Add("Could not verify BigVGAN num_mels: " + ex.Message);
+        }
         return false;
     }
 

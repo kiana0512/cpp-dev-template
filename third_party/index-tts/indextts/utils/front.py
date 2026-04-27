@@ -9,10 +9,51 @@ from indextts.utils.common import tokenize_by_CJK_char, de_tokenized_by_CJK_char
 from sentencepiece import SentencePieceProcessor
 
 
+class FallbackNormalizer:
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def normalize(self, text, *args, **kwargs):
+        return self._clean(text)
+
+    def __call__(self, text, *args, **kwargs):
+        return self.normalize(text, *args, **kwargs)
+
+    def normalize_sentence(self, text, *args, **kwargs):
+        return self.normalize(text, *args, **kwargs)
+
+    def cn_normalize(self, text, *args, **kwargs):
+        return self.normalize(text, *args, **kwargs)
+
+    def en_normalize(self, text, *args, **kwargs):
+        return self.normalize(text, *args, **kwargs)
+
+    def tag(self, text, *args, **kwargs):
+        return self.normalize(text, *args, **kwargs)
+
+    def verbalize(self, text, *args, **kwargs):
+        return self.normalize(text, *args, **kwargs)
+
+    def normalize_text(self, text, *args, **kwargs):
+        return self.normalize(text, *args, **kwargs)
+
+    def text_normalize(self, text, *args, **kwargs):
+        return self.normalize(text, *args, **kwargs)
+
+    def _clean(self, text):
+        if text is None:
+            return ""
+        text = str(text)
+        text = text.replace("\r", " ").replace("\n", " ")
+        text = text.replace("\u3000", " ")
+        return re.sub(r"\s+", " ", text).strip()
+
+
 class TextNormalizer:
     def __init__(self, enable_glossary=False):
         self.zh_normalizer = None
         self.en_normalizer = None
+        self.using_fallback_normalizer = False
         self.char_rep_map = {
             "：": ",",
             "；": ",",
@@ -118,11 +159,32 @@ class TextNormalizer:
         import platform
         if self.zh_normalizer is not None and self.en_normalizer is not None:
             return
+        mode = os.environ.get("INDEXTTS_TEXT_NORMALIZER", "auto").strip().lower()
+        if mode not in ("auto", "fallback", "wetext"):
+            mode = "auto"
+        if mode == "fallback":
+            self.zh_normalizer = FallbackNormalizer()
+            self.en_normalizer = FallbackNormalizer()
+            self.using_fallback_normalizer = True
+            print("[IndexTTS2][WARN][text_normalizer] fallback mode enabled, skip WeText/KaldiFST.", flush=True)
+            return
         if platform.system() != "Linux":  # Mac and Windows
-            from wetext import Normalizer
+            try:
+                from wetext import Normalizer
 
-            self.zh_normalizer = Normalizer(remove_erhua=False, lang="zh", operator="tn")
-            self.en_normalizer = Normalizer(lang="en", operator="tn")
+                self.zh_normalizer = Normalizer(remove_erhua=False, lang="zh", operator="tn")
+                self.en_normalizer = Normalizer(lang="en", operator="tn")
+                self.using_fallback_normalizer = False
+                print("[IndexTTS2][INFO][text_normalizer] WeText normalizer loaded.", flush=True)
+            except Exception as e:
+                if mode == "wetext":
+                    raise
+                self.zh_normalizer = FallbackNormalizer()
+                self.en_normalizer = FallbackNormalizer()
+                self.using_fallback_normalizer = True
+                print("[IndexTTS2][WARN][text_normalizer] WeText/KaldiFST unavailable, using fallback normalizer.", flush=True)
+                print("[IndexTTS2][WARN][text_normalizer] original_error=" + repr(e), flush=True)
+                return
         else:
             from tn.chinese.normalizer import Normalizer as NormalizerZh
             from tn.english.normalizer import Normalizer as NormalizerEn
@@ -136,11 +198,14 @@ class TextNormalizer:
                 cache_dir=cache_dir, remove_interjections=False, remove_erhua=False, overwrite_cache=False
             )
             self.en_normalizer = NormalizerEn(overwrite_cache=False)
+            self.using_fallback_normalizer = False
 
     def normalize(self, text: str) -> str:
         if not self.zh_normalizer or not self.en_normalizer:
             print("Error, text normalizer is not initialized !!!")
             return ""
+        if self.using_fallback_normalizer:
+            return self.zh_normalizer.normalize(text)
         if self.use_chinese(text):
             text = re.sub(TextNormalizer.ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
             # 应用术语词汇表（优先级最高，在所有保护之前）

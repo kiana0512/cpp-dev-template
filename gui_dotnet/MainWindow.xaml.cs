@@ -77,11 +77,14 @@ public partial class MainWindow
 
         foreach (var b in new[] { "dryrun", "real IndexTTS2", "use existing WAV" })
             AiBasicBackendCombo.Items.Add(b);
-        AiBasicBackendCombo.SelectedItem = "dryrun";
+        AiBasicBackendCombo.SelectedItem = "real IndexTTS2";
 
-        foreach (var b in new[] { "dryrun", "auto", "indextts2_local_api", "indextts2_local_cli", "indextts_legacy" })
+        foreach (var b in new[] { "dryrun", "indextts2_local_cli", "indextts2_local_api", "auto", "indextts_legacy" })
             AiTtsBackendCombo.Items.Add(b);
-        AiTtsBackendCombo.SelectedItem = "dryrun";
+        AiTtsBackendCombo.SelectedItem = "indextts2_local_cli";
+        foreach (var n in new[] { "auto", "fallback", "wetext" })
+            AiTextNormalizerCombo.Items.Add(n);
+        AiTextNormalizerCombo.SelectedItem = "fallback";
 
         RefreshPathLabels();
         LoadPresetsFromDisk(log: true);
@@ -393,6 +396,7 @@ public partial class MainWindow
         AiIndexTtsModelDirBox.Text = p.DefaultModelDir;
         AiIndexTtsConfigBox.Text = p.DefaultIndexTtsConfig;
         AiIndexTtsInferScriptBox.Text = "";
+        AiTextNormalizerCombo.SelectedItem = "fallback";
         AiOutDirBox.Text = p.DefaultOutDir;
         AiMorphMapBox.Text = p.DefaultMorphMap;
         AiSkeletonTreeBox.Text = p.DefaultSkeletonTree;
@@ -425,7 +429,7 @@ public partial class MainWindow
         var backend = basicBackend switch
         {
             "dryrun" => "dryrun",
-            "real IndexTTS2" => rawBackend == "dryrun" ? "auto" : rawBackend,
+            "real IndexTTS2" => rawBackend == "dryrun" ? "indextts2_local_cli" : rawBackend,
             "use existing WAV" => "dryrun",
             _ => rawBackend,
         };
@@ -445,6 +449,7 @@ public partial class MainWindow
             IndexTtsModelDir = AiIndexTtsModelDirBox.Text.Trim(),
             IndexTtsConfig = AiIndexTtsConfigBox.Text.Trim(),
             IndexTtsInferScript = AiIndexTtsInferScriptBox.Text.Trim(),
+            TextNormalizer = (AiTextNormalizerCombo.SelectedItem as string) ?? "fallback",
             SpeakerWav = AiSpeakerWavBox.Text.Trim(),
             ExistingWav = AiExistingWavBox.Text.Trim(),
             EmotionPrompt = AiEmotionPromptBox.Text.Trim(),
@@ -522,12 +527,15 @@ public partial class MainWindow
         var token = _aiGenerateCts.Token;
         SetAiGeneratingState(true);
         StartAiProgress("starting", "Starting...", indeterminate: true, 5);
+        AiLastErrorLabel.Text = "-";
+        AiTextNormalizerStatusLabel.Text = "Text normalizer: " + options.TextNormalizer;
         AppendAiLog("INFO", "Selected Python: " + options.PythonExe);
         AppendAiLog("INFO", "IndexTTS Repo: " + options.IndexTtsRepo);
         AppendAiLog("INFO", "Model Dir: " + options.IndexTtsModelDir);
         AppendAiLog("INFO", "Config: " + options.IndexTtsConfig);
         AppendAiLog("INFO", "Speaker WAV: " + options.SpeakerWav);
         AppendAiLog("INFO", "Backend: " + options.TtsBackend);
+        AppendAiLog("INFO", "Text normalizer: " + options.TextNormalizer);
         if (options.OfflineMode)
             AppendAiLog("INFO", "Offline env: HF_HUB_OFFLINE=1, TRANSFORMERS_OFFLINE=1, HF_HUB_DISABLE_XET=1");
         else
@@ -620,6 +628,7 @@ public partial class MainWindow
             return;
         }
         SetAiProgress("done", "Done", 100, indeterminate: false, "Success", Brushes.DarkGreen);
+        AiLastErrorLabel.Text = "-";
         if (playAfter) await PlayAiFramesAsync(_lastAiFramesPath);
     }
 
@@ -893,7 +902,7 @@ public partial class MainWindow
         AiBrowseExistingWavBtn.Visibility = existing ? Visibility.Visible : Visibility.Collapsed;
         if (mode == "dryrun") AiTtsBackendCombo.SelectedItem = "dryrun";
         if (mode == "real IndexTTS2" && ((AiTtsBackendCombo.SelectedItem as string) == "dryrun" || AiTtsBackendCombo.SelectedItem == null))
-            AiTtsBackendCombo.SelectedItem = "auto";
+            AiTtsBackendCombo.SelectedItem = "indextts2_local_cli";
         UpdateAiRuntimeEnvStatus("Not checked");
     }
 
@@ -928,7 +937,7 @@ public partial class MainWindow
         var line = $"[{DateTime.Now:HH:mm:ss.fff}] [AI][{level}] {message}";
         _pendingAiLog.Enqueue(line);
         EnsureAiFlushTimer();
-        if (level is "ERROR" or "WARN") AiLastErrorLabel.Text = message;
+        if (level is "ERROR") AiLastErrorLabel.Text = message;
     }
 
     private void EnqueueAiLog(string level, string message)
@@ -952,10 +961,41 @@ public partial class MainWindow
             SetAiProgress("check_paths", "Checking paths...", 10, false, "Running", Brushes.SteelBlue);
         else if (line.Contains("Python executable", StringComparison.OrdinalIgnoreCase))
             SetAiProgress("check_python", "Checking Python executable...", 35, false, "Running", Brushes.SteelBlue);
+        else if (line.Contains("Text normalizer", StringComparison.OrdinalIgnoreCase))
+            SetAiProgress("check_text_normalizer", "Checking text normalizer...", null, true, "Waiting / text normalizer", Brushes.DarkOrange);
         else if (line.Contains("IndexTTS import", StringComparison.OrdinalIgnoreCase))
             SetAiProgress("check_import", "Checking indextts import...", null, true, "Waiting / import", Brushes.DarkOrange);
         else if (line.Contains("Dependency quick", StringComparison.OrdinalIgnoreCase))
             SetAiProgress("check_dependency", "Checking OffloadedCache dependency...", 75, false, "Running", Brushes.SteelBlue);
+    }
+
+    private void ParseTextNormalizerLine(string line)
+    {
+        if (line.Contains("using fallback normalizer", StringComparison.OrdinalIgnoreCase))
+        {
+            AiTextNormalizerStatusLabel.Text = "fallback OK";
+            return;
+        }
+        if (line.Contains("fallback mode enabled", StringComparison.OrdinalIgnoreCase))
+        {
+            AiTextNormalizerStatusLabel.Text = "fallback OK";
+            return;
+        }
+        if (line.Contains("TextNormalizer loaded", StringComparison.OrdinalIgnoreCase))
+        {
+            AiTextNormalizerStatusLabel.Text = "loaded";
+            return;
+        }
+        if (line.Contains("[IndexTTS2Wrapper] text_normalizer=", StringComparison.OrdinalIgnoreCase))
+        {
+            var mode = line[(line.IndexOf("=", StringComparison.Ordinal) + 1)..].Trim();
+            AiTextNormalizerStatusLabel.Text = mode.Length > 0 ? mode : "-";
+            return;
+        }
+        if (line.Contains("Text normalizer failed", StringComparison.OrdinalIgnoreCase))
+        {
+            AiTextNormalizerStatusLabel.Text = "wetext failed";
+        }
     }
 
     private void DisplayAiManifest(AiRuntimeManifest manifest)
@@ -963,6 +1003,8 @@ public partial class MainWindow
         AiFrameCountLabel.Text = manifest.FrameCount.ToString();
         AiDurationLabel.Text = manifest.DurationSec.ToString("0.000") + " sec";
         AiTtsResolvedLabel.Text = manifest.TtsBackendResolved;
+        if (!string.IsNullOrWhiteSpace(manifest.TextNormalizerEffective))
+            AiTextNormalizerStatusLabel.Text = manifest.TextNormalizerEffective + (manifest.TextNormalizerFallbackUsed ? " OK" : "");
         AiEffectiveConfigLabel.Text = string.IsNullOrWhiteSpace(manifest.EffectiveConfig) ? "-" : manifest.EffectiveConfig;
         AiManifestBox.Text = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
     }
@@ -1028,7 +1070,13 @@ public partial class MainWindow
             return;
         if (line.Contains("[ERROR]", StringComparison.OrdinalIgnoreCase))
         {
-            SetAiProgress(_aiCurrentStage, "Failed", null, indeterminate: false, "Failed", Brushes.DarkRed);
+            if (IsTextNormalizerFallbackWarning(line))
+            {
+                AiTextNormalizerStatusLabel.Text = "fallback OK";
+                return;
+            }
+            var stage = ExtractRuntimeStage(line) ?? _aiCurrentStage;
+            SetAiProgress(stage, "Failed", null, indeterminate: false, "Failed", Brushes.DarkRed);
             AppendAiLog("ERROR", line);
             return;
         }
@@ -1122,9 +1170,17 @@ public partial class MainWindow
         while (count < MaxFlushLinesPerTick && _pendingAiParsed.TryDequeue(out var item))
         {
             ParseSetupLine(item.Line);
+            ParseTextNormalizerLine(item.Line);
             ParseAiRuntimeLine(item.Stream, item.Line);
             count++;
         }
+    }
+
+    private static bool IsTextNormalizerFallbackWarning(string line)
+    {
+        return line.Contains("using fallback normalizer", StringComparison.OrdinalIgnoreCase) ||
+               line.Contains("fallback mode enabled", StringComparison.OrdinalIgnoreCase) ||
+               line.Contains("TextNormalizer loaded", StringComparison.OrdinalIgnoreCase);
     }
 
     private void FlushAiText(TextBox box, ConcurrentQueue<string> pending)
@@ -1160,7 +1216,7 @@ public partial class MainWindow
     {
         var resolvedConfig = Path.Combine(o.OutDir, "ai_runtime.resolved.json");
         var offlineArg = o.OfflineMode ? " --offline" : " --allow-online";
-        return $"\"{o.PythonExe}\" \"{Path.Combine(RepoPaths.FindRepoRoot(), "ai_runtime", "app.py")}\" --config \"{resolvedConfig}\" --verbose --print-progress{offlineArg}";
+        return $"\"{o.PythonExe}\" \"{Path.Combine(RepoPaths.FindRepoRoot(), "ai_runtime", "app.py")}\" --config \"{resolvedConfig}\" --text-normalizer {o.TextNormalizer} --verbose --print-progress{offlineArg}";
     }
 
     private static string QuoteForCommand(string value) => "\"" + value.Replace("\"", "\\\"") + "\"";

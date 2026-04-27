@@ -67,6 +67,26 @@ def _ai_runtime_mask_file(filename):
     if not os.path.exists(path):
         raise FileNotFoundError("Local MaskGCT dependency missing: " + path)
     return path
+
+
+def _ai_runtime_mark(stage, **data):
+    if os.environ.get("INDEXTTS_CONSTRUCT_DEBUG") != "1":
+        return
+    line = {
+        "time": time.time(),
+        "stage": stage,
+        "data": data,
+    }
+    print(f"[IndexTTS2Construct][MARK] {stage}", flush=True)
+    path = os.environ.get("INDEXTTS_CONSTRUCT_DEBUG_LOG")
+    if not path:
+        return
+    try:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(line, ensure_ascii=False) + "\n")
+            f.flush()
+    except Exception as e:
+        print(f"[IndexTTS2Construct][WARN] failed to write marker: {e!r}", flush=True)
 # AI_RUNTIME_LOCAL_PATCH_END
 
 class IndexTTS2:
@@ -107,15 +127,20 @@ class IndexTTS2:
             self.use_cuda_kernel = False
             print(">> Be patient, it may take a while to run in CPU mode.")
 
+        _ai_runtime_mark("before_load_config", cfg_path=cfg_path, model_dir=model_dir, device=self.device)
         self.cfg = OmegaConf.load(cfg_path)
         self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
         self.use_accel = use_accel
         self.use_torch_compile = use_torch_compile
+        _ai_runtime_mark("after_load_config", version=str(getattr(self.cfg, "version", "")))
 
+        _ai_runtime_mark("before_qwen_emo_load")
         self.qwen_emo = QwenEmotion(os.path.join(self.model_dir, self.cfg.qwen_emo_path))
+        _ai_runtime_mark("after_qwen_emo_load")
 
+        _ai_runtime_mark("before_gpt_load")
         self.gpt = UnifiedVoice(**self.cfg.gpt, use_accel=self.use_accel)
         self.gpt_path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
         load_checkpoint(self.gpt, self.gpt_path)
@@ -125,6 +150,7 @@ class IndexTTS2:
         else:
             self.gpt.eval()
         print(">> GPT weights restored from:", self.gpt_path)
+        _ai_runtime_mark("after_gpt_load", path=self.gpt_path)
 
         if use_deepspeed:
             try:
@@ -134,6 +160,7 @@ class IndexTTS2:
                 print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")
 
         self.gpt.post_init_gpt2_config(use_deepspeed=use_deepspeed, kv_cache=True, half=self.use_fp16)
+        _ai_runtime_mark("after_gpt_post_init")
 
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN
@@ -146,21 +173,28 @@ class IndexTTS2:
                 print(f"{e!r}")
                 self.use_cuda_kernel = False
 
+        _ai_runtime_mark("before_w2v_feature_extractor", path=_ai_runtime_w2v_dir())
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained(_ai_runtime_w2v_dir(), local_files_only=True)
+        _ai_runtime_mark("after_w2v_feature_extractor")
+        _ai_runtime_mark("before_semantic_model_load")
         self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(
             os.path.join(self.model_dir, self.cfg.w2v_stat))
         self.semantic_model = self.semantic_model.to(self.device)
         self.semantic_model.eval()
         self.semantic_mean = self.semantic_mean.to(self.device)
         self.semantic_std = self.semantic_std.to(self.device)
+        _ai_runtime_mark("after_semantic_model_load")
 
+        _ai_runtime_mark("before_semantic_codec_load")
         semantic_codec = build_semantic_codec(self.cfg.semantic_codec)
         semantic_code_ckpt = _ai_runtime_mask_file("semantic_codec/model.safetensors")
         safetensors.torch.load_model(semantic_codec, semantic_code_ckpt)
         self.semantic_codec = semantic_codec.to(self.device)
         self.semantic_codec.eval()
         print('>> semantic_codec weights restored from: {}'.format(semantic_code_ckpt))
+        _ai_runtime_mark("after_semantic_codec_load", path=semantic_code_ckpt)
 
+        _ai_runtime_mark("before_s2mel_load")
         s2mel_path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
         s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
         s2mel, _, _, _ = load_checkpoint2(
@@ -182,15 +216,19 @@ class IndexTTS2:
         
         self.s2mel.eval()
         print(">> s2mel weights restored from:", s2mel_path)
+        _ai_runtime_mark("after_s2mel_load", path=s2mel_path)
 
         # load campplus_model
+        _ai_runtime_mark("before_campplus_load")
         campplus_ckpt_path = _ai_runtime_dep("campplus", "campplus_cn_common.bin")
         campplus_model = CAMPPlus(feat_dim=80, embedding_size=192)
         campplus_model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))
         self.campplus_model = campplus_model.to(self.device)
         self.campplus_model.eval()
         print(">> campplus_model weights restored from:", campplus_ckpt_path)
+        _ai_runtime_mark("after_campplus_load", path=campplus_ckpt_path)
 
+        _ai_runtime_mark("before_bigvgan_load")
         bigvgan_name = os.environ.get("BIGVGAN_LOCAL_DIR") or os.path.join(self.model_dir, "BigVGAN")
         if not os.path.isdir(bigvgan_name):
             raise FileNotFoundError("Local BigVGAN dependency missing: " + bigvgan_name)
@@ -199,30 +237,44 @@ class IndexTTS2:
         self.bigvgan.remove_weight_norm()
         self.bigvgan.eval()
         print(">> bigvgan weights restored from:", bigvgan_name)
+        _ai_runtime_mark("after_bigvgan_load", path=bigvgan_name)
 
         self.bpe_path = os.path.join(self.model_dir, self.cfg.dataset["bpe_model"])
+        _ai_runtime_mark("before_text_normalizer_load")
         self.normalizer = TextNormalizer(enable_glossary=True)
         self.normalizer.load()
         print(">> TextNormalizer loaded")
+        _ai_runtime_mark("after_text_normalizer_load")
+        _ai_runtime_mark("before_tokenizer", path=self.bpe_path)
         self.tokenizer = TextTokenizer(self.bpe_path, self.normalizer)
         print(">> bpe model loaded from:", self.bpe_path)
+        _ai_runtime_mark("after_tokenizer", path=self.bpe_path)
 
         # 加载术语词汇表（如果存在）
         self.glossary_path = os.path.join(self.model_dir, "glossary.yaml")
+        _ai_runtime_mark("before_glossary_load")
         if os.path.exists(self.glossary_path):
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             print(">> Glossary loaded from:", self.glossary_path)
+        _ai_runtime_mark("after_glossary_load", path=self.glossary_path, exists=os.path.exists(self.glossary_path))
 
+        _ai_runtime_mark("before_emo_matrix_load")
         emo_matrix = torch.load(os.path.join(self.model_dir, self.cfg.emo_matrix))
         self.emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
+        _ai_runtime_mark("after_emo_matrix_load", path=os.path.join(self.model_dir, self.cfg.emo_matrix))
 
+        _ai_runtime_mark("before_spk_matrix_load")
         spk_matrix = torch.load(os.path.join(self.model_dir, self.cfg.spk_matrix))
         self.spk_matrix = spk_matrix.to(self.device)
+        _ai_runtime_mark("after_spk_matrix_load", path=os.path.join(self.model_dir, self.cfg.spk_matrix))
 
+        _ai_runtime_mark("before_matrix_split")
         self.emo_matrix = torch.split(self.emo_matrix, self.emo_num)
         self.spk_matrix = torch.split(self.spk_matrix, self.emo_num)
+        _ai_runtime_mark("after_matrix_split")
 
+        _ai_runtime_mark("before_mel_fn_init")
         mel_fn_args = {
             "n_fft": self.cfg.s2mel['preprocess_params']['spect_params']['n_fft'],
             "win_size": self.cfg.s2mel['preprocess_params']['spect_params']['win_length'],
@@ -234,8 +286,10 @@ class IndexTTS2:
             "center": False
         }
         self.mel_fn = lambda x: mel_spectrogram(x, **mel_fn_args)
+        _ai_runtime_mark("after_mel_fn_init")
 
         # 缓存参考音频：
+        _ai_runtime_mark("before_any_remaining_init_step")
         self.cache_spk_cond = None
         self.cache_s2mel_style = None
         self.cache_s2mel_prompt = None
@@ -247,6 +301,7 @@ class IndexTTS2:
         # 进度引用显示（可选）
         self.gr_progress = None
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
+        _ai_runtime_mark("after_construct_done", model_version=str(self.model_version))
 
     @torch.no_grad()
     def get_emb(self, input_features, attention_mask):

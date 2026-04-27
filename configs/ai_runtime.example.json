@@ -1,6 +1,9 @@
 {
   "tts": {
-    "backend": "auto",
+    "backend": "indextts2_local_cli",
+    "text_normalizer": "fallback",
+    "auto_try_local_api": false,
+    "auto_try_legacy": false,
     "indextts_repo": "third_party/index-tts",
     "indextts_model_dir": "models/IndexTTS-2",
     "indextts_config": "models/IndexTTS-2/config.yaml",

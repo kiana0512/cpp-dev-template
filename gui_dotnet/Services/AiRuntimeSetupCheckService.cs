@@ -31,12 +31,33 @@ public static class AiRuntimeSetupCheckService
         onProcessOutput("STDOUT", "Speaker WAV: " + (options.SpeakerWav ?? ""));
         onProcessOutput("STDOUT", "Speaker WAV exists: " + File.Exists(options.SpeakerWav ?? ""));
         onProcessOutput("STDOUT", "Offline mode: " + options.OfflineMode);
+        var textNormalizer = NormalizeTextNormalizerMode(options.TextNormalizer);
+        onProcessOutput("STDOUT", "Text normalizer mode: " + textNormalizer);
+        onProcessOutput("STDOUT", "Backend mode:");
+        onProcessOutput("STDOUT", "- GUI mode: " + basicBackend);
+        onProcessOutput("STDOUT", "- Raw backend: " + options.TtsBackend);
+        onProcessOutput("STDOUT", "- Text normalizer: " + textNormalizer);
+        var windowsAuto = OperatingSystem.IsWindows() && string.Equals(options.TtsBackend, "auto", StringComparison.OrdinalIgnoreCase);
+        var willUseWrapper = string.Equals(options.TtsBackend, "indextts2_local_cli", StringComparison.OrdinalIgnoreCase) || windowsAuto;
+        var willTryLocalApi = string.Equals(options.TtsBackend, "indextts2_local_api", StringComparison.OrdinalIgnoreCase);
+        var willTryLegacy = string.Equals(options.TtsBackend, "indextts_legacy", StringComparison.OrdinalIgnoreCase);
+        onProcessOutput("STDOUT", "- Will use wrapper: " + (willUseWrapper ? "yes" : "no"));
+        onProcessOutput("STDOUT", "- Will try local_api: " + (willTryLocalApi ? "yes" : "no"));
+        onProcessOutput("STDOUT", "- Will try legacy: " + (willTryLegacy ? "yes" : "no"));
+        if (windowsAuto)
+        {
+            onProcessOutput("STDOUT", "- Windows auto route: local_cli only");
+            onProcessOutput("STDOUT", "- local_api disabled by default");
+            onProcessOutput("STDOUT", "- legacy disabled by default");
+        }
 
-        var model = AiRuntimeModelCheckService.Check(options.IndexTtsModelDir ?? "", options.IndexTtsConfig ?? "", options.IndexTtsRepo);
+        var model = AiRuntimeModelCheckService.Check(options.IndexTtsModelDir ?? "", options.IndexTtsConfig ?? "", options.IndexTtsRepo, textNormalizer);
         result.ModelOk = options.OfflineMode ? model.CanRunOffline : (model.ModelDirExists && model.ConfigExists);
         onProcessOutput("STDOUT", "Main model: " + (model.IndexTts2Ok ? "OK" : "Missing"));
         onProcessOutput("STDOUT", "w2v-bert-2.0: " + (model.W2vBertOk ? "OK" : "Missing"));
         onProcessOutput("STDOUT", "MaskGCT: " + (model.MaskGctOk ? "OK" : "Missing"));
+        onProcessOutput("STDOUT", "campplus: " + (model.CampplusOk ? "OK" : "Missing"));
+        onProcessOutput("STDOUT", "BigVGAN 80-band: " + (model.BigVganOk ? "OK" : "Missing/Wrong"));
         onProcessOutput("STDOUT", "Remote refs: " + (model.RemoteRefsOk ? "OK" : "Found"));
         onProcessOutput("STDOUT", "Offline runnable: " + (model.CanRunOffline ? "yes" : "no"));
         onProcessOutput("STDOUT", "Local model completeness: " + (model.LooksLocalComplete ? "OK" : "WARN"));
@@ -55,6 +76,10 @@ public static class AiRuntimeSetupCheckService
             result.Errors.Add("Local dependency missing: w2v-bert-2.0. Run: modelscope download --model AI-ModelScope/w2v-bert-2.0 --local_dir .\\models\\IndexTTS-2\\w2v-bert-2.0");
         if (realTts && options.OfflineMode && !model.MaskGctOk)
             result.Errors.Add("Local dependency missing: MaskGCT. Run: modelscope download --model amphion/MaskGCT --local_dir .\\models\\IndexTTS-2\\MaskGCT");
+        if (realTts && options.OfflineMode && !model.CampplusOk)
+            result.Errors.Add("Local dependency missing: campplus. Verify .\\models\\IndexTTS-2\\campplus\\campplus_cn_common.bin");
+        if (realTts && options.OfflineMode && !model.BigVganOk)
+            result.Errors.Add("BigVGAN must be 80-band. Verify .\\models\\IndexTTS-2\\BigVGAN\\config.json has num_mels=80.");
         if (realTts && options.OfflineMode && !model.RemoteRefsOk)
             result.Errors.Add("IndexTTS2 source still contains remote HF references. Run local patch first: .\\scripts\\patch_indextts2_local_paths.ps1");
 
@@ -83,15 +108,31 @@ public static class AiRuntimeSetupCheckService
         onProcessOutput("STDOUT", "Step 2: Python executable check");
         if (pythonCanRun)
         {
-            var pythonCheck = await RunPythonCheckAsync(python, "import sys; print(sys.executable); print(sys.version)", repo, "", options.OfflineMode, onProcessOutput, ct);
+            var pythonEnvScript = "import os,sys,site; " +
+                                  "print('sys.executable=', sys.executable); " +
+                                  "print('sys.version=', sys.version); " +
+                                  "print('sys.prefix=', sys.prefix); " +
+                                  "print('sys.base_prefix=', sys.base_prefix); " +
+                                  "print('site.getsitepackages=', site.getsitepackages()); " +
+                                  "print('PATH_HEAD=', os.environ.get('PATH','').split(os.pathsep)[:20]); " +
+                                  "import importlib.util; " +
+                                  "spec=importlib.util.find_spec('torch'); " +
+                                  "print('torch_found=', spec is not None); " +
+                                  "exec(\"import torch\\nprint('torch.__version__=', torch.__version__)\\nprint('torch.version.cuda=', torch.version.cuda)\\nprint('torch.cuda.is_available=', torch.cuda.is_available())\") if spec is not None else None";
+            var pythonCheck = await RunPythonCheckAsync(python, pythonEnvScript, repo, "", options.OfflineMode, textNormalizer, onProcessOutput, ct);
             if (!pythonCheck.ok)
                 result.Errors.Add("Selected Python could not run. stderr: " + pythonCheck.stderr.Trim());
             if ((pythonCheck.stdout + pythonCheck.stderr).Contains(@"D:\anaconda3\envs\llm", StringComparison.OrdinalIgnoreCase) &&
                 !(python.Contains(@"D:\anaconda3\envs\llm", StringComparison.OrdinalIgnoreCase)))
                 result.Warnings.Add("Check Setup is using conda llm unexpectedly; please verify Python path binding.");
+            if ((pythonCheck.stdout + pythonCheck.stderr).Contains(@"D:\anaconda3", StringComparison.OrdinalIgnoreCase))
+                result.Warnings.Add("Selected venv is based on Anaconda Python. Native DLL extensions like kaldifst may fail. This is OK when TextNormalizer=fallback, but strict wetext may not work.");
         }
 
-        result.PythonImportOk = !realTts || (pythonCanRun && await CheckPythonImportAsync(python, repo, options.OfflineMode, onProcessOutput, result, ct));
+        if (pythonCanRun)
+            await CheckTextNormalizerAsync(python, repo, options.OfflineMode, textNormalizer, onProcessOutput, result, ct);
+
+        result.PythonImportOk = !realTts || (pythonCanRun && await CheckPythonImportAsync(python, repo, options.OfflineMode, textNormalizer, onProcessOutput, result, ct));
 
         if (!realTts)
             result.PythonImportOk = true;
@@ -123,30 +164,85 @@ public static class AiRuntimeSetupCheckService
         return value.Equals("python", StringComparison.OrdinalIgnoreCase) || value.Equals("py -3", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static async Task<bool> CheckPythonImportAsync(
+    private static string NormalizeTextNormalizerMode(string? value)
+    {
+        var mode = string.IsNullOrWhiteSpace(value) ? "fallback" : value.Trim().ToLowerInvariant();
+        return mode is "auto" or "fallback" or "wetext" ? mode : "fallback";
+    }
+
+    private static async Task CheckTextNormalizerAsync(
         string python,
         string repo,
         bool offlineMode,
+        string textNormalizer,
         Action<string, string> onProcessOutput,
         AiSetupCheckResult result,
         CancellationToken ct)
     {
-        onProcessOutput("STDOUT", "Step 3: IndexTTS import check");
+        onProcessOutput("STDOUT", "Step 3: Text normalizer check");
+        onProcessOutput("STDOUT", "Text normalizer mode: " + textNormalizer);
+        if (textNormalizer == "fallback")
+        {
+            onProcessOutput("STDOUT", "WeText import: Skipped");
+            onProcessOutput("STDOUT", "KaldiFST import: Skipped");
+            onProcessOutput("STDOUT", "WeText: skipped by fallback mode");
+            onProcessOutput("STDOUT", "KaldiFST: skipped by fallback mode");
+            return;
+        }
+
+        var wetext = await RunPythonCheckAsync(python, "import wetext; print('WETEXT_OK')", repo, repo, offlineMode, textNormalizer, onProcessOutput, ct);
+        var kaldifst = await RunPythonCheckAsync(python, "import kaldifst; print('KALDIFST_OK')", repo, repo, offlineMode, textNormalizer, onProcessOutput, ct);
+        onProcessOutput("STDOUT", "WeText import: " + (wetext.ok ? "OK" : "Failed"));
+        onProcessOutput("STDOUT", "KaldiFST import: " + (kaldifst.ok ? "OK" : "Failed"));
+        if (wetext.ok && kaldifst.ok)
+            return;
+
+        var detail = "WeText/KaldiFST unavailable; auto mode will use fallback normalizer.";
+        if (textNormalizer == "wetext")
+        {
+            result.Errors.Add("Text normalizer mode is wetext, but WeText/KaldiFST import failed.");
+            if (!wetext.ok)
+                result.Errors.Add("WeText import failed: " + LastLine(wetext.stderr + "\n" + wetext.stdout));
+            if (!kaldifst.ok)
+                result.Errors.Add("KaldiFST import failed: " + LastLine(kaldifst.stderr + "\n" + kaldifst.stdout));
+        }
+        else
+        {
+            result.Warnings.Add(detail);
+        }
+    }
+
+    private static string LastLine(string text)
+    {
+        var lines = text.Replace("\r\n", "\n").Split('\n').Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
+        return lines.Count == 0 ? "" : lines[^1];
+    }
+
+    private static async Task<bool> CheckPythonImportAsync(
+        string python,
+        string repo,
+        bool offlineMode,
+        string textNormalizer,
+        Action<string, string> onProcessOutput,
+        AiSetupCheckResult result,
+        CancellationToken ct)
+    {
+        onProcessOutput("STDOUT", "Step 4: IndexTTS import check");
         var script = "import sys; print('PYTHON=', sys.executable); from indextts.infer_v2 import IndexTTS2; print('IMPORT_OK')";
-        var first = await RunPythonCheckAsync(python, script, repo, "", offlineMode, onProcessOutput, ct);
+        var first = await RunPythonCheckAsync(python, script, repo, "", offlineMode, textNormalizer, onProcessOutput, ct);
         if (first.ok)
         {
             result.Warnings.Add("IMPORT_OK using selected Python.");
-            await CheckDependencyQuickAsync(python, repo, offlineMode, onProcessOutput, result, ct);
+            await CheckDependencyQuickAsync(python, repo, offlineMode, textNormalizer, onProcessOutput, result, ct);
             return true;
         }
         if (!string.IsNullOrWhiteSpace(repo) && Directory.Exists(repo))
         {
-            var second = await RunPythonCheckAsync(python, script, repo, repo, offlineMode, onProcessOutput, ct);
+            var second = await RunPythonCheckAsync(python, script, repo, repo, offlineMode, textNormalizer, onProcessOutput, ct);
             if (second.ok)
             {
                 result.Warnings.Add("IMPORT_OK after adding IndexTTS repo to PYTHONPATH.");
-                await CheckDependencyQuickAsync(python, repo, offlineMode, onProcessOutput, result, ct);
+                await CheckDependencyQuickAsync(python, repo, offlineMode, textNormalizer, onProcessOutput, result, ct);
                 return true;
             }
             result.Errors.Add("IMPORT_FAILED even with PYTHONPATH=repo. stderr: " + second.stderr.Trim());
@@ -159,11 +255,11 @@ public static class AiRuntimeSetupCheckService
         return false;
     }
 
-    private static async Task CheckDependencyQuickAsync(string python, string repo, bool offlineMode, Action<string, string> onProcessOutput, AiSetupCheckResult result, CancellationToken ct)
+    private static async Task CheckDependencyQuickAsync(string python, string repo, bool offlineMode, string textNormalizer, Action<string, string> onProcessOutput, AiSetupCheckResult result, CancellationToken ct)
     {
-        onProcessOutput("STDOUT", "Step 4: Dependency quick check");
+        onProcessOutput("STDOUT", "Step 5: Dependency quick check");
         var script = "import transformers; print('transformers', transformers.__version__); from transformers.cache_utils import OffloadedCache; print('OffloadedCache OK')";
-        var check = await RunPythonCheckAsync(python, script, repo, repo, offlineMode, onProcessOutput, ct);
+        var check = await RunPythonCheckAsync(python, script, repo, repo, offlineMode, textNormalizer, onProcessOutput, ct);
         if (!check.ok)
         {
             result.Errors.Add("Dependency quick check failed. Current Python is not the correct IndexTTS2 environment, or transformers version is incompatible.");
@@ -178,6 +274,7 @@ public static class AiRuntimeSetupCheckService
         string cwdRepo,
         string pythonPath,
         bool offlineMode,
+        string textNormalizer,
         Action<string, string> onProcessOutput,
         CancellationToken ct)
     {
@@ -203,18 +300,28 @@ public static class AiRuntimeSetupCheckService
             CreateNoWindow = true,
         };
         psi.Environment["PYTHONUNBUFFERED"] = "1";
+        psi.Environment["INDEXTTS_TEXT_NORMALIZER"] = NormalizeTextNormalizerMode(textNormalizer);
+        psi.Environment["PYTHONNOUSERSITE"] = "1";
+        psi.Environment.Remove("PYTHONHOME");
         if (offlineMode)
         {
             psi.Environment["HF_HUB_OFFLINE"] = "1";
             psi.Environment["TRANSFORMERS_OFFLINE"] = "1";
             psi.Environment["HF_HUB_DISABLE_XET"] = "1";
         }
-        if (!string.IsNullOrWhiteSpace(pythonPath))
-            psi.Environment["PYTHONPATH"] = pythonPath + Path.PathSeparator + (psi.Environment.TryGetValue("PYTHONPATH", out var existing) ? existing : "");
+        var repoRoot = RepoPaths.FindRepoRoot();
+        var pythonPathParts = new[]
+        {
+            pythonPath,
+            repoRoot,
+            Path.Combine(repoRoot, "ai_runtime"),
+        }.Where(x => !string.IsNullOrWhiteSpace(x));
+        psi.Environment["PYTHONPATH"] = string.Join(Path.PathSeparator, pythonPathParts);
 
         onProcessOutput("STDOUT", "Check Setup command: python=" + python);
         onProcessOutput("STDOUT", "cwd=" + psi.WorkingDirectory);
-        onProcessOutput("STDOUT", "PYTHONPATH=" + (pythonPath == "" ? "(unchanged)" : pythonPath));
+        onProcessOutput("STDOUT", "PYTHONPATH=" + psi.Environment["PYTHONPATH"]);
+        onProcessOutput("STDOUT", "INDEXTTS_TEXT_NORMALIZER=" + psi.Environment["INDEXTTS_TEXT_NORMALIZER"]);
         onProcessOutput("STDOUT", "offline env=" + (offlineMode ? "HF_HUB_OFFLINE=1,TRANSFORMERS_OFFLINE=1,HF_HUB_DISABLE_XET=1" : "disabled"));
         using var p = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start python check.");
         var stdout = new StringBuilder();

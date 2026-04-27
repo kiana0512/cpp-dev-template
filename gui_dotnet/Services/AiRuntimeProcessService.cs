@@ -25,6 +25,10 @@ public sealed class AiRuntimeProcessService
         public string? RawText { get; set; }
         public string? ParseError { get; set; }
         public string? ErrorMessage { get; set; }
+        public string? RealExceptionMessage { get; set; }
+        public string? NativeExitHex { get; set; }
+        public string? LastSuccessMarker { get; set; }
+        public string? ConstructDebugLog { get; set; }
     }
 
     public async Task<AiRuntimeResult> GenerateAsync(
@@ -52,6 +56,7 @@ public sealed class AiRuntimeProcessService
             "--character-id", options.CharacterId,
             "--morph-map", Quote(options.MorphMap),
             "--tts-backend", options.TtsBackend,
+            "--text-normalizer", options.TextNormalizer,
             "--emotion-strength", options.EmotionStrength.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "--blink-enabled", options.BlinkEnabled ? "true" : "false",
             "--verbose",
@@ -89,6 +94,10 @@ public sealed class AiRuntimeProcessService
             CreateNoWindow = true,
         };
         psi.Environment["PYTHONUNBUFFERED"] = "1";
+        psi.Environment["INDEXTTS_TEXT_NORMALIZER"] = string.IsNullOrWhiteSpace(options.TextNormalizer) ? "fallback" : options.TextNormalizer;
+        psi.Environment["PYTHONNOUSERSITE"] = "1";
+        psi.Environment.Remove("PYTHONHOME");
+        onOutput("STDOUT", "[AI][INFO] Text normalizer: " + psi.Environment["INDEXTTS_TEXT_NORMALIZER"]);
         var repoRoot = RepoPaths.FindRepoRoot();
         var hfHome = Path.Combine(repoRoot, "models", "hf_cache");
         var hfTransformersCache = Path.Combine(hfHome, "transformers");
@@ -118,11 +127,13 @@ public sealed class AiRuntimeProcessService
             psi.Environment["TRANSFORMERS_OFFLINE"] = "0";
             psi.Environment["HF_HUB_DISABLE_XET"] = "0";
         }
-        if (!string.IsNullOrWhiteSpace(options.IndexTtsRepo))
+        var pythonPathParts = new[]
         {
-            psi.Environment["PYTHONPATH"] = options.IndexTtsRepo + Path.PathSeparator +
-                                        (psi.Environment.TryGetValue("PYTHONPATH", out var pyPath) ? pyPath : "");
-        }
+            options.IndexTtsRepo ?? "",
+            repoRoot,
+            Path.Combine(repoRoot, "ai_runtime"),
+        }.Where(x => !string.IsNullOrWhiteSpace(x));
+        psi.Environment["PYTHONPATH"] = string.Join(Path.PathSeparator, pythonPathParts);
         LastCommandLine = Quote(pythonFile) + " " + pythonPrefixArgs + "-u " + string.Join(" ", args);
 
         using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
@@ -154,6 +165,10 @@ public sealed class AiRuntimeProcessService
         string? rawManifestText = null;
         string? manifestParseError = null;
         string? manifestErrorMessage = null;
+        string? manifestRealExceptionMessage = null;
+        string? nativeExitHex = null;
+        string? lastSuccessMarker = null;
+        string? constructDebugLog = null;
         var manifestToRead = File.Exists(manifestPath) ? manifestPath : (File.Exists(failedManifestPath) ? failedManifestPath : "");
         if (!string.IsNullOrEmpty(manifestToRead))
         {
@@ -162,6 +177,10 @@ public sealed class AiRuntimeProcessService
             rawManifestText = loaded.RawText;
             manifestParseError = loaded.ParseError;
             manifestErrorMessage = loaded.ErrorMessage;
+            manifestRealExceptionMessage = loaded.RealExceptionMessage;
+            nativeExitHex = loaded.NativeExitHex;
+            lastSuccessMarker = loaded.LastSuccessMarker;
+            constructDebugLog = loaded.ConstructDebugLog;
             if (loaded.ParseError != null && Path.GetFileName(manifestToRead).Equals("manifest_failed.json", StringComparison.OrdinalIgnoreCase))
                 onOutput("STDERR", "Failed to parse manifest_failed.json, showing raw file content instead.");
         }
@@ -170,7 +189,7 @@ public sealed class AiRuntimeProcessService
         var stdOutText = stdout.ToString();
         var errorMessage = process.ExitCode == 0
             ? null
-            : ChooseErrorMessage(stdErrText, stdOutText, manifestErrorMessage, manifestParseError, process.ExitCode);
+            : ChooseErrorMessage(stdErrText, stdOutText, manifestRealExceptionMessage, manifestErrorMessage, manifestParseError, process.ExitCode, options.TextNormalizer, nativeExitHex, lastSuccessMarker, constructDebugLog);
 
         return new AiRuntimeResult
         {
@@ -219,6 +238,23 @@ public sealed class AiRuntimeProcessService
             var root = doc.RootElement;
             if (root.TryGetProperty("error_message", out var err))
                 outcome.ErrorMessage = err.GetString();
+            if (root.TryGetProperty("real_exception_message", out var realErr))
+                outcome.RealExceptionMessage = realErr.GetString();
+            if (root.TryGetProperty("native_exit_hex", out var nativeHex))
+                outcome.NativeExitHex = nativeHex.GetString();
+            if (root.TryGetProperty("last_success_marker", out var marker))
+                outcome.LastSuccessMarker = marker.GetString();
+            if (root.TryGetProperty("construct_debug_log", out var debugLog))
+                outcome.ConstructDebugLog = debugLog.GetString();
+            if (root.TryGetProperty("diagnostics", out var diagnostics))
+            {
+                if (string.IsNullOrWhiteSpace(outcome.NativeExitHex) && diagnostics.TryGetProperty("native_exit_hex", out var diagNativeHex))
+                    outcome.NativeExitHex = diagNativeHex.GetString();
+                if (string.IsNullOrWhiteSpace(outcome.LastSuccessMarker) && diagnostics.TryGetProperty("last_success_marker", out var diagMarker))
+                    outcome.LastSuccessMarker = diagMarker.GetString();
+                if (string.IsNullOrWhiteSpace(outcome.ConstructDebugLog) && diagnostics.TryGetProperty("construct_debug_log", out var diagDebugLog))
+                    outcome.ConstructDebugLog = diagDebugLog.GetString();
+            }
             if (root.TryGetProperty("exit_status", out var exit) &&
                 string.Equals(exit.GetString(), "failed", StringComparison.OrdinalIgnoreCase))
             {
@@ -235,21 +271,62 @@ public sealed class AiRuntimeProcessService
         return outcome;
     }
 
-    private static string ChooseErrorMessage(string stderr, string stdout, string? manifestError, string? manifestParseError, int exitCode)
+    private static string ChooseErrorMessage(string stderr, string stdout, string? manifestRealException, string? manifestError, string? manifestParseError, int exitCode, string textNormalizer, string? nativeExitHex, string? lastSuccessMarker, string? constructDebugLog)
     {
-        var stderrTail = LastNonEmptyBlock(stderr);
-        if (!string.IsNullOrWhiteSpace(stderrTail))
-            return stderrTail;
+        var combined = stderr + "\n" + stdout + "\n" + (manifestError ?? "");
+        var normalizerMode = string.IsNullOrWhiteSpace(textNormalizer) ? "auto" : textNormalizer.Trim().ToLowerInvariant();
+        if (IsNativeAccessViolation(exitCode, combined, manifestRealException, manifestError, nativeExitHex))
+        {
+            var marker = string.IsNullOrWhiteSpace(lastSuccessMarker) ? "" : " Last marker: " + lastSuccessMarker + ".";
+            var log = string.IsNullOrWhiteSpace(constructDebugLog) ? " See construct_debug.jsonl / wrapper stderr." : " See " + constructDebugLog + " / wrapper stderr.";
+            return "Native crash 0xC0000005 during IndexTTS2 construction." + marker + log;
+        }
+        if (!string.IsNullOrWhiteSpace(manifestRealException))
+            return manifestRealException!;
+        if (!string.IsNullOrWhiteSpace(manifestError))
+            return manifestError!;
+        if (normalizerMode == "wetext" && ContainsTextNormalizerFailure(combined))
+            return "Text normalizer failed. Try INDEXTTS_TEXT_NORMALIZER=fallback on Windows.";
+        if (combined.Contains("Text normalizer fallback did not take effect", StringComparison.OrdinalIgnoreCase))
+            return "Text normalizer fallback did not take effect. Check that INDEXTTS_TEXT_NORMALIZER is set before importing IndexTTS2 and front.py has no top-level wetext import.";
         var aiError = stdout.Split(Environment.NewLine)
             .Where(line => line.Contains("[AI_RUNTIME][ERROR]", StringComparison.OrdinalIgnoreCase))
+            .Where(line => !IsFallbackNormalizerWarning(line))
             .LastOrDefault();
         if (!string.IsNullOrWhiteSpace(aiError))
             return aiError.Trim();
-        if (!string.IsNullOrWhiteSpace(manifestError))
-            return manifestError!;
+        var stderrTail = LastNonEmptyBlock(stderr);
+        if (!string.IsNullOrWhiteSpace(stderrTail))
+            return stderrTail;
         if (!string.IsNullOrWhiteSpace(manifestParseError))
             return manifestParseError!;
         return $"ai_runtime exited with {exitCode}";
+    }
+
+    private static bool IsNativeAccessViolation(int exitCode, string combined, string? manifestRealException, string? manifestError, string? nativeExitHex)
+    {
+        if (exitCode == unchecked((int)0xC0000005))
+            return true;
+        var text = combined + "\n" + (manifestRealException ?? "") + "\n" + (manifestError ?? "") + "\n" + (nativeExitHex ?? "");
+        return text.Contains("0xC0000005", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("3221225477", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("NativeAccessViolation", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("native process crash/access violation", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsFallbackNormalizerWarning(string text)
+    {
+        return text.Contains("using fallback normalizer", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("fallback mode enabled", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("TextNormalizer loaded", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ContainsTextNormalizerFailure(string text)
+    {
+        return text.Contains("_kaldifst", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("kaldifst", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("wetext", StringComparison.OrdinalIgnoreCase) ||
+               text.Contains("DLL load failed", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string LastNonEmptyBlock(string text)
@@ -278,6 +355,9 @@ public sealed class AiRuntimeProcessService
             tts = new
             {
                 backend = o.TtsBackend,
+                text_normalizer = string.IsNullOrWhiteSpace(o.TextNormalizer) ? "fallback" : o.TextNormalizer,
+                auto_try_local_api = false,
+                auto_try_legacy = false,
                 indextts_repo = o.IndexTtsRepo ?? "",
                 indextts_model_dir = o.IndexTtsModelDir ?? "",
                 indextts_config = o.IndexTtsConfig ?? "",

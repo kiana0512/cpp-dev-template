@@ -275,47 +275,52 @@
                                         <Label Grid.Row="1" Grid.Column="0" Content="Config"/>
                                         <TextBox x:Name="AiIndexTtsConfigBox" Grid.Row="1" Grid.Column="1"/>
                                         <Button Grid.Row="1" Grid.Column="2" Content="Browse Config" Margin="6,0,0,3" Click="AiBrowseIndexTtsConfigBtn_OnClick"/>
-                                        <Label Grid.Row="2" Grid.Column="0" Content="Infer Script"/>
-                                        <TextBox x:Name="AiIndexTtsInferScriptBox" Grid.Row="2" Grid.Column="1"/>
-                                        <Button Grid.Row="2" Grid.Column="2" Content="Browse Infer" Margin="6,0,0,3" Click="AiBrowseIndexTtsInferScriptBtn_OnClick"/>
+                                        <Label Grid.Row="2" Grid.Column="0" Content="Infer Script" Visibility="Collapsed"/>
+                                        <TextBox x:Name="AiIndexTtsInferScriptBox" Grid.Row="2" Grid.Column="1" Visibility="Collapsed"/>
+                                        <Button Grid.Row="2" Grid.Column="2" Content="Browse Infer" Margin="6,0,0,3" Click="AiBrowseIndexTtsInferScriptBtn_OnClick" Visibility="Collapsed"/>
                                         <Label Grid.Row="3" Grid.Column="0" Content="Raw Backend"/>
                                         <ComboBox x:Name="AiTtsBackendCombo" Grid.Row="3" Grid.Column="1" Width="180" HorizontalAlignment="Left"/>
-                                        <Label Grid.Row="4" Grid.Column="0" Content="Target Duration"/>
-                                        <TextBox x:Name="AiTargetDurationBox" Grid.Row="4" Grid.Column="1" Width="100" HorizontalAlignment="Left"/>
-                                        <Label Grid.Row="5" Grid.Column="0" Content="FPS / Strength"/>
-                                        <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal">
+                                        <Label Grid.Row="4" Grid.Column="0" Content="Text Normalizer"/>
+                                        <StackPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal">
+                                            <ComboBox x:Name="AiTextNormalizerCombo" Width="120" HorizontalAlignment="Left"/>
+                                            <TextBlock Text="auto = try WeText, fallback if DLL fails; fallback = simple cleaner, recommended for Windows demo; wetext = strict WeText/KaldiFST" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="DimGray" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <Label Grid.Row="5" Grid.Column="0" Content="Target Duration"/>
+                                        <TextBox x:Name="AiTargetDurationBox" Grid.Row="5" Grid.Column="1" Width="100" HorizontalAlignment="Left"/>
+                                        <Label Grid.Row="6" Grid.Column="0" Content="FPS / Strength"/>
+                                        <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal">
                                             <TextBox x:Name="AiFpsBox" Width="60" Text="30"/>
                                             <TextBox x:Name="AiEmotionStrengthBox" Width="60" Text="0.7" Margin="8,0,0,0"/>
                                             <CheckBox x:Name="AiBlinkEnabledCheckBox" Content="Blink" IsChecked="True" Margin="12,0,0,0"/>
                                             <CheckBox x:Name="AiUseTimestampCheckBox" Content="Use timestamp" IsChecked="True" Margin="12,0,0,0"/>
                                         </StackPanel>
-                                        <Label Grid.Row="6" Grid.Column="0" Content="Out Dir"/>
-                                        <TextBox x:Name="AiOutDirBox" Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"/>
-                                        <Label Grid.Row="7" Grid.Column="0" Content="Morph Map"/>
-                                        <TextBox x:Name="AiMorphMapBox" Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"/>
-                                        <Label Grid.Row="8" Grid.Column="0" Content="Skeleton Tree"/>
-                                        <TextBox x:Name="AiSkeletonTreeBox" Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"/>
-                                        <Label Grid.Row="9" Grid.Column="0" Content="Options"/>
-                                        <WrapPanel Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2">
+                                        <Label Grid.Row="7" Grid.Column="0" Content="Out Dir"/>
+                                        <TextBox x:Name="AiOutDirBox" Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"/>
+                                        <Label Grid.Row="8" Grid.Column="0" Content="Morph Map"/>
+                                        <TextBox x:Name="AiMorphMapBox" Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"/>
+                                        <Label Grid.Row="9" Grid.Column="0" Content="Skeleton Tree"/>
+                                        <TextBox x:Name="AiSkeletonTreeBox" Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2"/>
+                                        <Label Grid.Row="10" Grid.Column="0" Content="Options"/>
+                                        <WrapPanel Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="2">
                                             <CheckBox x:Name="AiOfflineModeCheckBox" Content="Offline local model only" IsChecked="True" Margin="0,0,10,4"/>
-                                            <CheckBox x:Name="AiUseGeneratedLocalConfigCheckBox" Content="Use generated local config" Margin="0,0,10,4"/>
-                                            <CheckBox x:Name="AiUseFp16CheckBox" Content="UseFp16" Margin="0,0,10,4"/>
-                                            <CheckBox x:Name="AiUseCudaKernelCheckBox" Content="UseCudaKernel" Margin="0,0,10,4"/>
-                                            <CheckBox x:Name="AiUseDeepSpeedCheckBox" Content="UseDeepSpeed" Margin="0,0,10,4"/>
-                                            <CheckBox x:Name="AiUseRandomCheckBox" Content="UseRandom" Margin="0,0,10,4"/>
-                                            <CheckBox x:Name="AiFallbackToDryrunCheckBox" Content="FallbackToDryrun" Margin="0,0,10,4"/>
+                                            <CheckBox x:Name="AiUseGeneratedLocalConfigCheckBox" Content="Use generated local config" Margin="0,0,10,4" Visibility="Collapsed"/>
+                                            <CheckBox x:Name="AiUseFp16CheckBox" Content="UseFp16" Margin="0,0,10,4" Visibility="Collapsed"/>
+                                            <CheckBox x:Name="AiUseCudaKernelCheckBox" Content="UseCudaKernel" Margin="0,0,10,4" Visibility="Collapsed"/>
+                                            <CheckBox x:Name="AiUseDeepSpeedCheckBox" Content="UseDeepSpeed" Margin="0,0,10,4" Visibility="Collapsed"/>
+                                            <CheckBox x:Name="AiUseRandomCheckBox" Content="UseRandom" Margin="0,0,10,4" Visibility="Collapsed"/>
+                                            <CheckBox x:Name="AiFallbackToDryrunCheckBox" Content="FallbackToDryrun" Margin="0,0,10,4" Visibility="Collapsed"/>
                                         </WrapPanel>
                                     </Grid>
                                 </Expander>
                                 <WrapPanel>
                                     <Button x:Name="AiCheckModelBtn" Content="Check Setup" MinWidth="110" Margin="0,0,8,6" Click="AiCheckModelBtn_OnClick"/>
-                                    <Button x:Name="AiPatchLocalPathsBtn" Content="Patch Local Paths" MinWidth="125" Margin="0,0,8,6" Click="AiPatchLocalPathsBtn_OnClick"/>
+                                    <Button x:Name="AiPatchLocalPathsBtn" Content="Patch Local Paths" MinWidth="125" Margin="0,0,8,6" Click="AiPatchLocalPathsBtn_OnClick" Visibility="Collapsed"/>
                                     <Button x:Name="AiGenerateBtn" Content="Generate" MinWidth="90" Margin="0,0,8,6" Click="AiGenerateBtn_OnClick"/>
                                     <Button x:Name="AiGenerateAndPlayBtn" Content="Generate + Play" MinWidth="120" Margin="0,0,8,6" Click="AiGenerateAndPlayBtn_OnClick"/>
                                     <Button x:Name="AiPlayExistingFramesBtn" Content="Play Last" MinWidth="85" Margin="0,0,8,6" Click="AiPlayExistingFramesBtn_OnClick"/>
                                     <Button x:Name="AiStopPlaybackBtn" Content="Stop" MinWidth="70" Margin="0,0,8,6" Click="AiStopPlaybackBtn_OnClick"/>
                                     <Button x:Name="AiOpenOutputFolderBtn" Content="Open Output" MinWidth="105" Margin="0,0,8,6" Click="AiOpenOutputFolderBtn_OnClick"/>
-                                    <Button x:Name="AiCopyCommandBtn" Content="Copy AI Command" MinWidth="125" Margin="0,0,8,6" Click="AiCopyCommandBtn_OnClick"/>
+                                    <Button x:Name="AiCopyCommandBtn" Content="Copy AI Command" MinWidth="125" Margin="0,0,8,6" Click="AiCopyCommandBtn_OnClick" Visibility="Collapsed"/>
                                     <Button x:Name="AiClearLogBtn" Content="Clear AI Log" MinWidth="105" Margin="0,0,8,6" Click="AiClearLogBtn_OnClick"/>
                                 </WrapPanel>
                             </StackPanel>
@@ -351,6 +356,7 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Status:" FontWeight="Bold"/>
                                     <TextBlock x:Name="AiRunStatusLabel" Grid.Row="0" Grid.Column="1" Text="Idle" Foreground="Gray"/>
@@ -363,34 +369,36 @@
                                     </StackPanel>
                                     <TextBlock Grid.Row="3" Grid.Column="0" Text="Elapsed:" FontWeight="Bold"/>
                                     <TextBlock x:Name="AiElapsedText" Grid.Row="3" Grid.Column="1" Text="Elapsed: 00:00:00"/>
-                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Heartbeat:" FontWeight="Bold"/>
-                                    <TextBlock x:Name="AiHeartbeatText" Grid.Row="4" Grid.Column="1" Text="Last update: -"/>
-                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="UI heartbeat:" FontWeight="Bold"/>
-                                    <TextBlock x:Name="AiUiHeartbeatText" Grid.Row="5" Grid.Column="1" Text="-"/>
-                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Effective config:" FontWeight="Bold"/>
-                                    <TextBlock x:Name="AiEffectiveConfigLabel" Grid.Row="6" Grid.Column="1" Text="-" TextWrapping="Wrap"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Heartbeat:" FontWeight="Bold" Visibility="Collapsed"/>
+                                    <TextBlock x:Name="AiHeartbeatText" Grid.Row="4" Grid.Column="1" Text="Last update: -" Visibility="Collapsed"/>
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="UI heartbeat:" FontWeight="Bold" Visibility="Collapsed"/>
+                                    <TextBlock x:Name="AiUiHeartbeatText" Grid.Row="5" Grid.Column="1" Text="-" Visibility="Collapsed"/>
+                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Effective config:" FontWeight="Bold" Visibility="Collapsed"/>
+                                    <TextBlock x:Name="AiEffectiveConfigLabel" Grid.Row="6" Grid.Column="1" Text="-" TextWrapping="Wrap" Visibility="Collapsed"/>
                                     <TextBlock Grid.Row="7" Grid.Column="0" Text="Last wav:" FontWeight="Bold"/>
                                     <TextBlock x:Name="AiLastWavLabel" Grid.Row="7" Grid.Column="1" Text="-" TextWrapping="Wrap"/>
                                     <TextBlock Grid.Row="8" Grid.Column="0" Text="Frames:" FontWeight="Bold"/>
                                     <TextBlock x:Name="AiLastFramesLabel" Grid.Row="8" Grid.Column="1" Text="-" TextWrapping="Wrap"/>
                                     <TextBlock Grid.Row="9" Grid.Column="0" Text="Manifest:" FontWeight="Bold"/>
                                     <TextBlock x:Name="AiLastManifestLabel" Grid.Row="9" Grid.Column="1" Text="-" TextWrapping="Wrap"/>
-                                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Frame count:" FontWeight="Bold"/>
-                                    <TextBlock x:Name="AiFrameCountLabel" Grid.Row="10" Grid.Column="1" Text="-"/>
-                                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Duration:" FontWeight="Bold"/>
-                                    <TextBlock x:Name="AiDurationLabel" Grid.Row="11" Grid.Column="1" Text="-"/>
+                                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Frame count:" FontWeight="Bold" Visibility="Collapsed"/>
+                                    <TextBlock x:Name="AiFrameCountLabel" Grid.Row="10" Grid.Column="1" Text="-" Visibility="Collapsed"/>
+                                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Duration:" FontWeight="Bold" Visibility="Collapsed"/>
+                                    <TextBlock x:Name="AiDurationLabel" Grid.Row="11" Grid.Column="1" Text="-" Visibility="Collapsed"/>
                                     <TextBlock Grid.Row="12" Grid.Column="0" Text="Backend:" FontWeight="Bold"/>
                                     <TextBlock x:Name="AiTtsResolvedLabel" Grid.Row="12" Grid.Column="1" Text="-"/>
                                     <TextBlock Grid.Row="13" Grid.Column="0" Text="Setup:" FontWeight="Bold"/>
                                     <TextBlock x:Name="AiModelCheckLabel" Grid.Row="13" Grid.Column="1" Text="-"/>
                                     <TextBlock Grid.Row="14" Grid.Column="0" Text="Python:" FontWeight="Bold"/>
                                     <TextBlock x:Name="AiPythonStatusLabel" Grid.Row="14" Grid.Column="1" Text="-" TextWrapping="Wrap"/>
-                                    <TextBlock Grid.Row="15" Grid.Column="0" Text="Import:" FontWeight="Bold"/>
-                                    <TextBlock x:Name="AiImportStatusLabel" Grid.Row="15" Grid.Column="1" Text="-"/>
-                                    <TextBlock Grid.Row="16" Grid.Column="0" Text="Playback:" FontWeight="Bold"/>
-                                    <TextBlock x:Name="AiPlaybackProgressLabel" Grid.Row="16" Grid.Column="1" Text="-"/>
-                                    <TextBlock Grid.Row="17" Grid.Column="0" Text="Last error:" FontWeight="Bold"/>
-                                    <TextBlock x:Name="AiLastErrorLabel" Grid.Row="17" Grid.Column="1" Text="-" Foreground="DarkRed" TextWrapping="Wrap"/>
+                                    <TextBlock Grid.Row="15" Grid.Column="0" Text="Import:" FontWeight="Bold" Visibility="Collapsed"/>
+                                    <TextBlock x:Name="AiImportStatusLabel" Grid.Row="15" Grid.Column="1" Text="-" Visibility="Collapsed"/>
+                                    <TextBlock Grid.Row="16" Grid.Column="0" Text="Playback:" FontWeight="Bold" Visibility="Collapsed"/>
+                                    <TextBlock x:Name="AiPlaybackProgressLabel" Grid.Row="16" Grid.Column="1" Text="-" Visibility="Collapsed"/>
+                                    <TextBlock Grid.Row="17" Grid.Column="0" Text="Text normalizer:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiTextNormalizerStatusLabel" Grid.Row="17" Grid.Column="1" Text="-" TextWrapping="Wrap"/>
+                                    <TextBlock Grid.Row="18" Grid.Column="0" Text="Last error:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="AiLastErrorLabel" Grid.Row="18" Grid.Column="1" Text="-" Foreground="DarkRed" TextWrapping="Wrap"/>
                                 </Grid>
                             </GroupBox>
                             <TabControl Grid.Row="1">

@@ -1,143 +1,103 @@
-# 虚拟人表情驱动 — UE 插件联调工程
+# UE5 Virtual Human Bridge
 
-本仓库提供端到端链路：**文本/音频参数 → ExpressionFrame（JSON）→ TCP 文本行 → UE5 Runtime 插件驱动 Morph**。  
+UE5 virtual human bridge，当前通过 TCP JSON line 驱动 Morph Target，并接入 IndexTTS2 生成语音和 morph-only 表情时间线。
 
-定位：**轻量发送端 + 协议参考实现 + UE 插件源码**，便于本地联调、JSON 对照、预设回归。
+## 当前能力
 
----
+- Manual sender：手动发送单帧 `expression_frame`。
+- Presets sender：从 `configs/presets.json` 发送预设帧。
+- AI Runtime dryrun：无模型生成测试 wav 和 `frames.jsonl`。
+- Existing wav：跳过 TTS，用已有 wav 生成 morph-only timeline。
+- Real IndexTTS2：推荐 raw backend 为 `indextts2_local_cli`。
+- TCP playback to UE：通过 `127.0.0.1:7001` 播放 JSON line 到 VHReceiver。
 
-## 项目组成
+## 当前限制
 
-| 模块 | 说明 |
-|------|------|
-| **C++ 核心** | `expression_mapper`、`packet_validator`、`json_protocol`、`sender_service`、`transport_client` |
-| **CLI** | `vh_demo_sender` — 脚本/自动化 |
-| **WPF GUI** | `gui_dotnet/VhSenderGui` — **推荐调试入口**，仅需 **.NET 8 SDK** |
-| **UE 插件** | `ue5/Plugins/VHReceiver` |
+- Windows 下 `wetext/kaldifst` 仍可能 `_kaldifst DLL load failed`，默认 `Text Normalizer=fallback` 只是 demo 跑通方案，不等价完整文本规范化。
+- 当前输出为 `meta.morph_only=true`、`meta.skeleton_motion=false`，不做骨骼动画。
+- WebSocket 未接入，当前只保留 TCP JSON line 协议。
 
----
+## 快速启动 GUI
+
+```powershell
+cd D:\RT\ue5-virtual-human-bridge
+dotnet run --project .\gui_dotnet\VhSenderGui.csproj -c Debug
+```
+
+构建 GUI：
+
+```powershell
+dotnet build .\gui_dotnet\VhSenderGui.csproj -c Release
+```
+
+## 固定依赖
+
+sentencepiece 必须固定为 `0.1.99`：
+
+```powershell
+uv pip install "sentencepiece==0.1.99" --python .\third_party\index-tts\.venv\Scripts\python.exe
+```
+
+测试 `bpe.model`：
+
+```powershell
+.\third_party\index-tts\.venv\Scripts\python.exe -X faulthandler -c "import sentencepiece as spm; p=r'D:\RT\ue5-virtual-human-bridge\models\IndexTTS-2\bpe.model'; sp=spm.SentencePieceProcessor(); print(sp.Load(p), sp.GetPieceSize())"
+```
+
+期望输出：`True 12000`。`sentencepiece==0.2.1` 在当前 Windows/Anaconda-based uv venv 下加载 `bpe.model` 会 native crash。
+
+## AI Runtime 命令
+
+Dryrun：
+
+```powershell
+.\scripts\run_ai_morph_tts.ps1 -Text "你好，我是虚拟人助手" -Emotion happy -DryRun -VerboseLog
+```
+
+Existing wav：
+
+```powershell
+.\scripts\run_ai_morph_tts.ps1 -SkipTts -Wav .\wav\鹿乃-心做し.wav -Text "你好，我是虚拟人助手" -Emotion happy -VerboseLog
+```
+
+Real IndexTTS2：
+
+```powershell
+.\scripts\run_ai_morph_tts.ps1 `
+  -Text "你好，我是初音未来虚拟人助手，很高兴见到你。" `
+  -Emotion happy `
+  -TtsBackend indextts2_local_cli `
+  -PythonExe "D:\RT\ue5-virtual-human-bridge\third_party\index-tts\.venv\Scripts\python.exe" `
+  -IndexTtsRepo "D:\RT\ue5-virtual-human-bridge\third_party\index-tts" `
+  -IndexTtsModelDir "D:\RT\ue5-virtual-human-bridge\models\IndexTTS-2" `
+  -IndexTtsConfig "D:\RT\ue5-virtual-human-bridge\models\IndexTTS-2\config.yaml" `
+  -DefaultSpeakerWav "D:\RT\ue5-virtual-human-bridge\wav\鹿乃-心做し.wav" `
+  -EmotionPrompt "开心、自然、语速适中" `
+  -VerboseLog
+```
+
+播放到 UE：
+
+```powershell
+.\scripts\play_ai_morph_frames_tcp.ps1 `
+  -Frames .\output\ai_sessions\gui_latest\frames.jsonl `
+  -Host 127.0.0.1 `
+  -Port 7001 `
+  -UseTimestamp
+```
 
 ## 目录结构
 
 ```text
-cpp-dev-template/
-├── CMakeLists.txt              # vh_protocol、vh_demo_sender、vh_tests
-├── configs/                    # presets、样例帧、blendshape 参考
-├── gui_dotnet/                 # .NET 8 WPF 发送端（主 GUI）
-├── include/vh/
-├── src/
-├── tests/
-├── scripts/
-├── outputs/                    # 默认 frames.jsonl、logs
-├── docs/
-│   ├── gui_dotnet.md           # ← WPF 详细使用说明（必读）
-│   └── ue_integration.md
-└── ue5/Plugins/VHReceiver/
+configs/                  presets、sample_frame、YYB Miku morph/skeleton 参考配置
+ai_runtime/               TTS、音频分析、morph-only timeline 生成
+gui_dotnet/               .NET 8 WPF GUI
+scripts/                  GUI、AI runtime、播放、模型环境脚本
+docs/                     GUI、AI runtime、UE 集成和 Windows 排障文档
+include/ src/ tests/      C++ sender/protocol/test 代码
+third_party/index-tts/    已跟踪的 IndexTTS2 本地 patch 源码
+models/                   本地模型权重，忽略，不提交
+output/                   运行输出，忽略，不提交
 ```
 
----
-
-## WPF 图形界面：快速开始
-
-**环境**：Windows + [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)。
-
-在**仓库根目录**（存在 `configs/presets.json`）执行：
-
-```powershell
-dotnet build gui_dotnet/VhSenderGui.csproj -c Release
-dotnet run --project gui_dotnet/VhSenderGui.csproj -c Release
-```
-
-**典型联调流程**：
-
-1. UE PIE 运行，插件监听端口（默认 `7001`）。
-2. 打开 WPF：`Host = 127.0.0.1`，`Port = 7001`，模式 `tcp`。
-3. 点击 **测试 TCP** 确认端口可达，再 **连接**。
-4. 在左侧选预设（或改右侧表单），**发送一次** 或 **开始循环**。
-5. 在 **原始 JSON** 页签与 UE Output Log 对照帧内容。
-
-**完整界面说明、每个按钮含义、`presets.json` 格式、日志导出、file/stdout 模式、发布与排障** → 见 **`docs/gui_dotnet.md`**。
-
----
-
-## 构建 C++（CLI / 测试）
-
-前提：CMake ≥ 3.20，C++17；`nlohmann_json` 可通过 FetchContent 获取。
-
-```powershell
-cmake -B cmake-build-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build cmake-build-debug
-```
-
-产物示例：`vh_demo_sender.exe`、`vh_tests.exe`（若开启测试）。
-
-使用 **GUI 不要求** 编译 C++。
-
----
-
-## CLI：`vh_demo_sender` 示例
-
-```powershell
-.\cmake-build-debug\vh_demo_sender.exe --text "你好" --emotion happy --mode tcp --host 127.0.0.1 --port 7001
-.\cmake-build-debug\vh_demo_sender.exe --config configs/sample_frame.json --mode tcp --port 7001
-.\cmake-build-debug\vh_demo_sender.exe --demo --loop --fps 24 --mode tcp --port 7001
-```
-
-更多参数见 `src/main.cpp` 或 `--help`。
-
----
-
-## 协议摘要
-
-- **类型**：`type = "expression_frame"`，`version = "1.0"`。
-- **传输**：每帧 **一行紧凑 JSON**，UTF-8，行尾 **`\n`**。
-- **音频**：`phoneme_hint` ∈ `rest,a,i,u,e,o`；`rms`、`emotion.confidence` ∈ [0,1]。
-- **Blendshapes**：15 个固定 ARKit 键名，与 UE 插件约定一致。
-- **头部**：`head_pose` pitch/yaw/roll ∈ [-90,90]。
-
-逻辑管道：`MapperInput` → `buildFrame` → 校验 → 序列化 → 发送（C++ CLI 与 C# GUI 语义对齐）。
-
----
-
-## 配置文件
-
-| 文件 | 用途 |
-|------|------|
-| `configs/presets.json` | WPF 预设列表；改后可点界面「重新加载 presets.json」 |
-| `configs/sample_frame.json` | 合法整帧样例；WPF 可一键发送 |
-| `configs/blendshape_map_yyb_miku.json` | 参考；UE 侧默认映射在插件内 |
-
----
-
-## UE5 联调
-
-插件路径：`ue5/Plugins/VHReceiver/`。复制到工程 `Plugins/` 后编译，在角色上添加 **Expression Receiver**，绑定网格，`ListenPort` 与发送端一致。
-
-步骤与属性说明见 **`docs/ue_integration.md`** 与 **`docs/gui_dotnet.md`** 中的 TCP 流程。
-
----
-
-## 排障（摘录）
-
-| 现象 | 方向 |
-|------|------|
-| TCP 连不上 | PIE 是否运行、端口、防火墙、WPF「测试 TCP」 |
-| 无表情 | `TargetMesh`、Morph 覆盖配置 |
-| 有表情无口型 | `phoneme` 是否长期 `rest`、`rms` 过小 |
-
----
-
-## 后续扩展
-
-- 接入 TTS / 唇形驱动仍走同一 JSON 管道  
-- 传输层可演进 WebSocket / gRPC（需 UE 配合）  
-- 扩展 `ExpressionFrame` 字段时保持版本与兼容策略  
-
----
-
-## 文档索引
-
-| 文档 | 内容 |
-|------|------|
-| **`docs/gui_dotnet.md`** | **WPF 安装、界面、按钮、预设、日志、发布、FAQ** |
-| `docs/ue_integration.md` | 插件路径与联调要点 |
+更多说明见 `docs/gui_dotnet.md`、`docs/ai_morph_runtime.md`、`docs/ue_integration.md` 和 `docs/troubleshooting_indextts2_windows.md`。

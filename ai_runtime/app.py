@@ -42,6 +42,19 @@ def _str_to_bool(value: str | bool | None, default: bool = False) -> bool:
     return value.lower() in {"1", "true", "yes", "on"}
 
 
+def _normalize_text_normalizer_mode(value: Any) -> str:
+    mode = str(value or "fallback").strip().lower()
+    return mode if mode in {"auto", "fallback", "wetext"} else "fallback"
+
+
+def _check_optional_import(module_name: str) -> tuple[bool, str]:
+    try:
+        __import__(module_name)
+        return True, ""
+    except Exception as exc:
+        return False, repr(exc)
+
+
 def _default_out_dir(session_name: str | None = None) -> Path:
     if session_name:
         return Path("output") / "ai_sessions" / session_name
@@ -63,6 +76,15 @@ def _numpy_available() -> bool:
         return True
     except Exception:
         return False
+
+
+def _sentencepiece_version() -> str:
+    try:
+        import sentencepiece as spm  # type: ignore
+
+        return str(getattr(spm, "__version__", "unknown"))
+    except Exception as exc:
+        return f"not importable: {exc}"
 
 
 class RuntimeLogger:
@@ -164,6 +186,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--morph-map")
     parser.add_argument("--skeleton-tree")
     parser.add_argument("--tts-backend", choices=["auto", "indextts2", "indextts2_local_cli", "indextts2_local_api", "indextts_legacy", "dryrun"])
+    parser.add_argument("--text-normalizer", choices=["auto", "fallback", "wetext"])
     parser.add_argument("--alignment-backend", choices=["heuristic", "forced_optional"])
     parser.add_argument("--emotion-strength", type=float)
     parser.add_argument("--blink-enabled")
@@ -195,6 +218,7 @@ def _resolved(args: argparse.Namespace, config: dict[str, Any]) -> dict[str, Any
     tts = dict(config.get("tts") or {})
     cli_map = {
         "backend": args.tts_backend,
+        "text_normalizer": args.text_normalizer,
         "python_executable": args.python_executable,
         "indextts_repo": args.indextts_repo,
         "indextts_model_dir": args.indextts_model_dir,
@@ -294,6 +318,16 @@ def run(argv: list[str] | None = None) -> int:
     original_config_path = ""
     effective_config_path = ""
     config_patched = False
+    text_normalizer = "fallback"
+    text_normalizer_effective = "fallback"
+    wetext_available = "unknown"
+    kaldifst_available = "unknown"
+    text_normalizer_fallback_used = False
+    text_normalizer_warning = ""
+    backend_attempts: list[dict[str, str]] = []
+    selected_backend = ""
+    final_backend = ""
+    final_error_source = ""
 
     try:
         _apply_offline_env(offline_mode)
@@ -305,6 +339,29 @@ def run(argv: list[str] | None = None) -> int:
             logger.emit("INFO", "config_load", f"config_path={config_path}")
             config = load_json_file(config_path)
             resolved = _resolved(args, config)
+            tts_cfg_for_normalizer = resolved.get("tts") or {}
+            text_normalizer = _normalize_text_normalizer_mode(tts_cfg_for_normalizer.get("text_normalizer"))
+            text_normalizer_effective = text_normalizer
+            tts_cfg_for_normalizer["text_normalizer"] = text_normalizer
+            os.environ["INDEXTTS_TEXT_NORMALIZER"] = text_normalizer
+            logger.emit("INFO", "text_normalizer", f"mode={text_normalizer}")
+            if text_normalizer == "fallback":
+                wetext_available = "unknown"
+                kaldifst_available = "unknown"
+                text_normalizer_fallback_used = True
+                logger.emit("INFO", "text_normalizer", "wetext/kaldifst import check skipped by fallback mode")
+            else:
+                wetext_available, wetext_error = _check_optional_import("wetext")
+                kaldifst_available, kaldifst_error = _check_optional_import("kaldifst")
+                if wetext_available is not True:
+                    logger.emit("WARN", "text_normalizer", "wetext import failed: " + wetext_error)
+                if kaldifst_available is not True:
+                    logger.emit("WARN", "text_normalizer", "kaldifst import failed: " + kaldifst_error)
+                if text_normalizer == "auto" and (wetext_available is not True or kaldifst_available is not True):
+                    text_normalizer_effective = "fallback"
+                    text_normalizer_fallback_used = True
+                    text_normalizer_warning = "WeText/KaldiFST unavailable; auto mode will use fallback normalizer."
+                    logger.emit("INFO", "text_normalizer", "will fallback if mode=auto")
             if not args.out_dir:
                 configured_root = _cfg(resolved, "runtime", "output_root", "")
                 if configured_root and args.session_name:
@@ -316,6 +373,7 @@ def run(argv: list[str] | None = None) -> int:
         with timed(stage_timings, "path_resolve", logger):
             failed_stage = "path_resolve"
             tts_cfg = resolved["tts"]
+            tts_cfg["text_normalizer"] = text_normalizer
             config_python = str(tts_cfg.get("python_executable") or "")
             if config_python and Path(config_python).name and str(Path(config_python)) != sys.executable:
                 logger.emit("WARN", "path_resolve", "Config python_executable differs from runtime sys.executable.", {
@@ -399,9 +457,11 @@ def run(argv: list[str] | None = None) -> int:
                 warnings.append(f"Could not read skeleton tree: {exc}")
                 skeleton_available = False
 
-        tts_backend = str(tts_cfg.get("backend") or args.tts_backend or "auto")
+        tts_backend = str(tts_cfg.get("backend") or args.tts_backend or "indextts2_local_cli")
+        selected_backend = tts_backend
         if args.dry_run:
             tts_backend = "dryrun"
+            selected_backend = tts_backend
         if tts_backend != "dryrun" and not speaker:
             msg = "IndexTTS2 real inference usually needs spk_audio_prompt; choose Speaker WAV or set default_speaker_wav."
             warnings.append(msg)
@@ -440,16 +500,26 @@ def run(argv: list[str] | None = None) -> int:
                 tts_backend_resolved = "dryrun"
             else:
                 adapter = IndexTtsAdapter(tts_backend, resolved, logger=logger.emit)
-                adapter.synthesize(
-                    text,
-                    generated_wav,
-                    speaker_wav=speaker,
-                    emotion=emotion,
-                    emotion_prompt=args.emotion_prompt or str(tts_cfg.get("emotion_prompt") or ""),
-                    target_duration_sec=args.target_duration_sec,
-                    offline_mode=offline_mode,
-                )
+                try:
+                    adapter.synthesize(
+                        text,
+                        generated_wav,
+                        speaker_wav=speaker,
+                        emotion=emotion,
+                        emotion_prompt=args.emotion_prompt or str(tts_cfg.get("emotion_prompt") or ""),
+                        target_duration_sec=args.target_duration_sec,
+                        offline_mode=offline_mode,
+                    )
+                except Exception:
+                    failed_stage = adapter.current_stage or failed_stage
+                    backend_attempts = adapter.attempts
+                    final_backend = adapter.resolved_mode
+                    final_error_source = adapter.resolved_mode
+                    raise
                 tts_backend_resolved = adapter.resolved_mode
+                final_backend = tts_backend_resolved
+                final_error_source = tts_backend_resolved
+                backend_attempts = adapter.attempts
                 warnings.extend(adapter.warnings)
 
         with timed(stage_timings, "wav_load", logger):
@@ -506,6 +576,16 @@ def run(argv: list[str] | None = None) -> int:
                 "skeleton_bone_count": skeleton_bone_count,
                 "tts_backend": tts_backend,
                 "tts_backend_resolved": tts_backend_resolved,
+                "backend_attempts": backend_attempts,
+                "selected_backend": selected_backend,
+                "final_backend": final_backend or tts_backend_resolved,
+                "final_error_source": final_error_source,
+                "text_normalizer": text_normalizer,
+                "text_normalizer_effective": text_normalizer_effective,
+                "text_normalizer_fallback_used": text_normalizer_fallback_used,
+                "text_normalizer_warning": text_normalizer_warning,
+                "wetext_available": wetext_available,
+                "kaldifst_available": kaldifst_available,
                 "alignment_backend": aligner.name,
                 "emotion_strength": float(face_cfg.get("emotion_strength", 0.7)),
                 "blink_enabled": _str_to_bool(face_cfg.get("blink_enabled"), True),
@@ -519,6 +599,7 @@ def run(argv: list[str] | None = None) -> int:
                 "python_executable": sys.executable,
                 "python_executable_runtime": sys.executable,
                 "python_executable_config": str(tts_cfg.get("python_executable") or ""),
+                "sentencepiece_version": _sentencepiece_version(),
                 "platform": platform.platform(),
                 "numpy_available": _numpy_available(),
                 "indextts_adapter_mode": tts_backend_resolved,
@@ -546,37 +627,69 @@ def run(argv: list[str] | None = None) -> int:
         return 0
     except Exception as exc:
         failed_stage = failed_stage or "runtime"
+        exc_text = str(exc)
+        is_native_access_violation = (
+            "0xC0000005" in exc_text
+            or "3221225477" in exc_text
+            or "-1073741819" in exc_text
+            or "NativeAccessViolation" in type(exc).__name__
+        )
+        native_exit_code = 3221225477 if is_native_access_violation else None
+        native_exit_hex = "0xC0000005" if is_native_access_violation else ""
+        construct_debug_path = out_dir / "construct_debug.jsonl"
+        last_success_marker = ""
+        if construct_debug_path.exists():
+            try:
+                lines = [line.strip() for line in construct_debug_path.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip()]
+                if lines:
+                    last_success_marker = str(json.loads(lines[-1]).get("stage") or "")
+            except Exception:
+                last_success_marker = ""
+        if is_native_access_violation:
+            failed_stage = "tts_model_load"
         logger.emit("ERROR", failed_stage, str(exc))
         print(f"[AI_RUNTIME][ERROR] failed_stage={failed_stage} error={str(exc)}", flush=True)
         failed = {
             "exit_status": "failed",
             "failed_stage": failed_stage,
             "error_message": str(exc),
-            "traceback_summary": "".join(traceback.format_exception_only(type(exc), exc)).strip(),
-            "warnings": warnings,
-            "resolved_paths": {
-                "out_dir": str(out_dir),
-                "project_root": str(PROJECT_ROOT),
-            },
-            "model_check": model_check.to_dict() if model_check else None,
-            "local_model_report": local_model_report.to_dict() if local_model_report else None,
-            "remote_reference_report": remote_reference_report.to_dict() if remote_reference_report else None,
-            "stage_timings": stage_timings,
-            "command_line": " ".join(sys.argv),
+            "selected_backend": selected_backend,
+            "final_backend": final_backend,
+            "final_error_source": final_error_source,
+            "text_normalizer": text_normalizer,
+            "text_normalizer_effective": text_normalizer_effective,
+            "sentencepiece_version": _sentencepiece_version(),
             "python_executable": sys.executable,
-            "python_executable_runtime": sys.executable,
             "python_executable_config": str((resolved.get("tts") or {}).get("python_executable") or "") if isinstance(resolved, dict) else "",
-            "platform": platform.platform(),
-            "stdout_hint": "See AI Process Output",
-            "offline_mode": offline_mode,
-            "hf_hub_offline": os.environ.get("HF_HUB_OFFLINE", ""),
-            "transformers_offline": os.environ.get("TRANSFORMERS_OFFLINE", ""),
-            "hf_hub_disable_xet": os.environ.get("HF_HUB_DISABLE_XET", ""),
-            "hf_home": os.environ.get("HF_HOME", ""),
-            "original_config": original_config_path,
-            "effective_config": effective_config_path,
-            "config_patched": config_patched,
-            "traceback": traceback.format_exc(),
+            "model_dir": str(model_dir) if "model_dir" in locals() else "",
+            "config": effective_config_path or original_config_path,
+            "speaker_wav": str(speaker) if "speaker" in locals() and speaker else "",
+            "warnings": warnings,
+            "diagnostics": {
+                "traceback_summary": "".join(traceback.format_exception_only(type(exc), exc)).strip(),
+                "stage_timings": stage_timings,
+                "backend_attempts": backend_attempts,
+                "text_normalizer_fallback_used": text_normalizer_fallback_used,
+                "text_normalizer_warning": text_normalizer_warning,
+                "wetext_available": wetext_available,
+                "kaldifst_available": kaldifst_available,
+                "native_exit_code": native_exit_code,
+                "native_exit_hex": native_exit_hex,
+                "last_success_marker": last_success_marker,
+                "construct_debug_log": str(construct_debug_path) if construct_debug_path.exists() or is_native_access_violation else "",
+                "platform": platform.platform(),
+                "offline_mode": offline_mode,
+                "hf_hub_offline": os.environ.get("HF_HUB_OFFLINE", ""),
+                "transformers_offline": os.environ.get("TRANSFORMERS_OFFLINE", ""),
+                "hf_hub_disable_xet": os.environ.get("HF_HUB_DISABLE_XET", ""),
+                "hf_home": os.environ.get("HF_HOME", ""),
+                "original_config": original_config_path,
+                "effective_config": effective_config_path,
+                "config_patched": config_patched,
+                "model_check": model_check.to_dict() if model_check else None,
+                "local_model_report": local_model_report.to_dict() if local_model_report else None,
+                "remote_reference_report": remote_reference_report.to_dict() if remote_reference_report else None,
+            },
         }
         write_json_atomic(failed_manifest_path, failed)
         print(f"[AI_RUNTIME][ERROR][manifest] wrote {failed_manifest_path}", file=sys.stderr, flush=True)

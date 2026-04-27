@@ -30,10 +30,57 @@ def _truthy(value: Any, default: bool = False) -> bool:
     return str(value).lower() in {"1", "true", "yes", "on"}
 
 
+def _normalize_text_normalizer_mode(value: Any) -> str:
+    mode = str(value or "fallback").strip().lower()
+    return mode if mode in {"auto", "fallback", "wetext"} else "fallback"
+
+
+def _is_text_normalizer_error(value: Exception | str) -> bool:
+    text = str(value).lower()
+    return any(token in text for token in ["_kaldifst", "kaldifst", "wetext", "dll load failed"])
+
+
+def _text_normalizer_fallback_succeeded(value: Exception | str) -> bool:
+    text = str(value).lower()
+    return any(
+        token in text
+        for token in [
+            "using fallback normalizer",
+            "fallback mode enabled",
+            "textnormalizer loaded",
+        ]
+    )
+
+
+def _tail_text(value: str, limit: int = 1200) -> str:
+    if len(value) <= limit:
+        return value
+    return value[-limit:]
+
+
+def _recent_lines(value: str, limit: int = 80) -> str:
+    lines = [line for line in value.replace("\r\n", "\n").split("\n") if line.strip()]
+    return "\n".join(lines[-limit:])
+
+
+def _traceback_last_line(value: str) -> str:
+    lines = [line.strip() for line in value.replace("\r\n", "\n").split("\n") if line.strip()]
+    if not lines:
+        return ""
+    for line in reversed(lines):
+        if line.startswith(("RuntimeError:", "ValueError:", "ImportError:", "FileNotFoundError:", "ModuleNotFoundError:", "AssertionError:", "TypeError:", "OSError:", "Exception:")):
+            return line
+    return lines[-1]
+
+
+class NativeAccessViolation(RuntimeError):
+    pass
+
+
 class IndexTtsAdapter(TtsBackend):
     name = "indextts"
 
-    def __init__(self, backend_mode: str = "auto", config: dict[str, Any] | None = None, logger: Callable[[str, str, str, dict[str, Any] | None], None] | None = None) -> None:
+    def __init__(self, backend_mode: str = "indextts2_local_cli", config: dict[str, Any] | None = None, logger: Callable[[str, str, str, dict[str, Any] | None], None] | None = None) -> None:
         self.backend_mode = backend_mode
         self.config = config or {}
         self.tts_config = self.config.get("tts", self.config)
@@ -41,12 +88,33 @@ class IndexTtsAdapter(TtsBackend):
         self.resolved_mode = backend_mode
         self.attempts: list[dict[str, str]] = []
         self.logger = logger
+        self.current_stage = "tts_prepare"
 
     def _log(self, level: str, stage: str, message: str, data: dict[str, Any] | None = None) -> None:
+        if stage:
+            self.current_stage = stage
         if self.logger:
             self.logger(level, stage, message, data)
         else:
             print(f"[AI_RUNTIME][{level}][{stage}] {message}", flush=True)
+
+    def _observe_runtime_line(self, line: str) -> None:
+        marker = "[AI_RUNTIME]"
+        start = line.find(marker)
+        if start < 0:
+            return
+        level_start = line.find("[", start + len(marker))
+        if level_start < 0:
+            return
+        level_end = line.find("]", level_start + 1)
+        if level_end < 0:
+            return
+        stage_start = line.find("[", level_end + 1)
+        if stage_start < 0:
+            return
+        stage_end = line.find("]", stage_start + 1)
+        if stage_end > stage_start + 1:
+            self.current_stage = line[stage_start + 1:stage_end]
 
     @contextmanager
     def _heartbeat(self, stage: str, interval_sec: float = 2.0) -> Iterator[None]:
@@ -96,9 +164,15 @@ class IndexTtsAdapter(TtsBackend):
     def _friendly_error(self, original: Exception | str, backend_mode: str | None = None) -> RuntimeError:
         mode = backend_mode or self.backend_mode
         attempts = "; ".join(f"{a['mode']}: {a['error']}" for a in self.attempts) or "none"
+        final_attempt = self.attempts[-1] if self.attempts else {"mode": self.resolved_mode, "error": str(original)}
+        normalizer_hint = ""
+        if _is_text_normalizer_error(original) or _is_text_normalizer_error(attempts):
+            normalizer_hint = "\n" + self._text_normalizer_failure_message()
         return RuntimeError(
             "IndexTTS synthesis failed.\n"
             f"backend_mode: {mode}\n"
+            f"selected_backend: {final_attempt.get('mode', self.resolved_mode)}\n"
+            f"final_error_source: {final_attempt.get('mode', self.resolved_mode)}\n"
             f"attempts: {attempts}\n"
             f"repo: {self.repo or ''}\n"
             f"model_dir: {self.model_dir or ''}\n"
@@ -107,12 +181,42 @@ class IndexTtsAdapter(TtsBackend):
             f"python_executable: {self.python_executable}\n"
             f"sys_path_head: {sys.path[:8]}\n"
             f"original_error: {str(original).splitlines()[0][:800]}\n"
+            f"{normalizer_hint}\n"
             "Suggestions:\n"
             "- Ensure the official index-tts repo is installed: cd <index-tts repo>; pip install -e .\n"
             "- Or run: uv sync --all-extras\n"
             "- Ensure model weights are complete: modelscope download --model IndexTeam/IndexTTS-2 --local_dir <project>\\models\\IndexTTS-2\n"
             "- Provide a Speaker WAV for real IndexTTS2 inference."
         )
+
+    @property
+    def text_normalizer_mode(self) -> str:
+        return _normalize_text_normalizer_mode(self.tts_config.get("text_normalizer") or os.environ.get("INDEXTTS_TEXT_NORMALIZER") or "fallback")
+
+    def _apply_text_normalizer_env(self, env: dict[str, str] | None = None) -> str:
+        mode = self.text_normalizer_mode
+        target = env if env is not None else os.environ
+        target["INDEXTTS_TEXT_NORMALIZER"] = mode
+        self._log("INFO", "text_normalizer", f"mode={mode}")
+        return mode
+
+    def _text_normalizer_failure_message(self) -> str:
+        if self.text_normalizer_mode == "wetext":
+            return "Text normalizer failed. Try INDEXTTS_TEXT_NORMALIZER=fallback on Windows."
+        return (
+            "Text normalizer fallback did not take effect. Check that INDEXTTS_TEXT_NORMALIZER "
+            "is set before importing IndexTTS2 and front.py has no top-level wetext import."
+        )
+
+    def _should_report_text_normalizer_fatal(self, value: Exception | str) -> bool:
+        if not _is_text_normalizer_error(value):
+            return False
+        if self.text_normalizer_mode == "wetext":
+            return True
+        if _text_normalizer_fallback_succeeded(value):
+            return False
+        text = str(value).lower()
+        return "front.py" in text and "load" in text and "textnormalizer loaded" not in text
 
     def _record_failure(self, mode: str, exc: Exception | str) -> None:
         self.attempts.append({"mode": mode, "error": str(exc).splitlines()[0][:500]})
@@ -310,6 +414,7 @@ class IndexTtsAdapter(TtsBackend):
         if not self.config_path.exists():
             raise RuntimeError(f"config.yaml not found. Model download may be incomplete: {self.config_path}")
         spk = self._speaker_wav(speaker_wav)
+        self._apply_text_normalizer_env()
         self._prepare_local_offline(offline_mode)
         self._log("STAGE", "tts_model_load", f"cfg_path={self.config_path}")
         self._log("STAGE", "tts_model_load", f"model_dir={self.model_dir}")
@@ -346,6 +451,14 @@ class IndexTtsAdapter(TtsBackend):
                     "Check models\\IndexTTS-2\\config.yaml and qwen0.6bemo4-merge local files.\n"
                     "Offline mode is enabled, so online download should be avoided."
                 ) from exc
+            if self._should_report_text_normalizer_fatal(exc):
+                message = self._text_normalizer_failure_message()
+                self._log("ERROR", "tts_model_load", message)
+                raise RuntimeError(message) from exc
+            if self.text_normalizer_mode in {"auto", "fallback"} and _is_text_normalizer_error(exc):
+                message = "local_api cannot safely bypass WeText on this environment. Use indextts2_local_cli."
+                self._log("ERROR", "tts_model_load", message)
+                raise RuntimeError(message) from exc
             self._log("ERROR", "tts_model_load", str(exc))
             raise
         self._log("STAGE", "tts_model_load", f"Model loaded elapsed={time.perf_counter() - start:.2f}", {"elapsed": round(time.perf_counter() - start, 3)})
@@ -385,6 +498,10 @@ class IndexTtsAdapter(TtsBackend):
             with self._heartbeat("tts_infer"):
                 infer(**filtered_infer_kwargs)
         except Exception as exc:
+            if self._should_report_text_normalizer_fatal(exc):
+                message = self._text_normalizer_failure_message()
+                self._log("ERROR", "tts_infer", message)
+                raise RuntimeError(message) from exc
             self._log("ERROR", "tts_infer", str(exc))
             raise
         self._log("STAGE", "tts_infer", f"generated wav={out_wav} elapsed={time.perf_counter() - start:.2f}", {"wav": str(out_wav), "elapsed": round(time.perf_counter() - start, 3)})
@@ -396,10 +513,14 @@ class IndexTtsAdapter(TtsBackend):
     def _write_wrapper(self, path: Path) -> None:
         wrapper = r'''
 import argparse
+import faulthandler
 import inspect
 import json
+import os
 import sys
 from pathlib import Path
+
+faulthandler.enable(all_threads=True)
 
 def filter_kwargs(fn, kwargs):
     try:
@@ -415,10 +536,21 @@ def main():
     ap.add_argument("--payload", required=True)
     args = ap.parse_args()
     data = json.loads(Path(args.payload).read_text(encoding="utf-8-sig"))
+    os.environ["INDEXTTS_TEXT_NORMALIZER"] = data.get("text_normalizer", "fallback")
+    os.environ["HF_HUB_OFFLINE"] = "1"
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
+    os.environ["HF_HUB_DISABLE_XET"] = "1"
     repo = data.get("repo")
     if repo:
         sys.path.insert(0, repo)
-    print("[IndexTTS2Wrapper] importing indextts.infer_v2", flush=True)
+    print("[IndexTTS2Wrapper] text_normalizer=" + os.environ.get("INDEXTTS_TEXT_NORMALIZER", ""), flush=True)
+    print("[IndexTTS2Wrapper] repo=" + str(repo or ""), flush=True)
+    print("[IndexTTS2Wrapper] model_dir=" + str(data.get("model_dir", "")), flush=True)
+    print("[IndexTTS2Wrapper] cfg_path=" + str(data.get("config", "")), flush=True)
+    if os.environ.get("INDEXTTS_CONSTRUCT_DEBUG") == "1":
+        print("[IndexTTS2Wrapper] construct_debug_log=" + str(os.environ.get("INDEXTTS_CONSTRUCT_DEBUG_LOG", "")), flush=True)
+    print("[AI_RUNTIME][STAGE][tts_model_load] wrapper model load start", flush=True)
+    print("[IndexTTS2Wrapper] importing IndexTTS2", flush=True)
     from indextts.infer_v2 import IndexTTS2
     init_kwargs = filter_kwargs(IndexTTS2, {
         "cfg_path": data["config"],
@@ -429,20 +561,40 @@ def main():
         "use_deepspeed": data.get("use_deepspeed", False),
     })
     print("[IndexTTS2Wrapper] init kwargs=" + json.dumps(init_kwargs, ensure_ascii=False), flush=True)
+    print("[IndexTTS2Wrapper] constructing IndexTTS2", flush=True)
     tts = IndexTTS2(**init_kwargs)
+    print("[IndexTTS2Wrapper] IndexTTS2 constructed", flush=True)
+    print("[AI_RUNTIME][STAGE][tts_model_load] wrapper model load done", flush=True)
     infer = getattr(tts, "infer")
     infer_kwargs = data["infer_kwargs"]
     print("[IndexTTS2Wrapper] infer keys=" + ",".join(sorted(infer_kwargs)), flush=True)
+    print("[AI_RUNTIME][STAGE][tts_infer] wrapper inference start", flush=True)
+    print("[IndexTTS2Wrapper] running infer", flush=True)
     infer(**filter_kwargs(infer, infer_kwargs))
+    print("[IndexTTS2Wrapper] infer done", flush=True)
     out = Path(data["out_wav"])
     if not out.exists() or out.stat().st_size <= 0:
         raise RuntimeError(f"output wav missing or empty: {out}")
+    print("[IndexTTS2Wrapper] output wav exists", flush=True)
     print(f"[IndexTTS2Wrapper] wrote {out} bytes={out.stat().st_size}", flush=True)
+    print("[AI_RUNTIME][STAGE][tts_infer] wrapper inference done", flush=True)
 
 if __name__ == "__main__":
     main()
 '''
         path.write_text(textwrap.dedent(wrapper).lstrip(), encoding="utf-8")
+
+    def _last_construct_marker(self, path: Path) -> str:
+        if not path.exists():
+            return ""
+        try:
+            lines = [line.strip() for line in path.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip()]
+            if not lines:
+                return ""
+            data = json.loads(lines[-1])
+            return str(data.get("stage") or "")
+        except Exception:
+            return ""
 
     def _synthesize_cli_wrapper(
         self,
@@ -467,9 +619,14 @@ if __name__ == "__main__":
             raise RuntimeError(f"config.yaml not found. Model download may be incomplete: {self.config_path}")
         out_wav.parent.mkdir(parents=True, exist_ok=True)
         spk = self._speaker_wav(speaker_wav)
+        text_normalizer = self._apply_text_normalizer_env()
         self._prepare_local_offline(offline_mode)
         wrapper = out_wav.parent / "run_indextts2_wrapper.py"
         payload = out_wav.parent / "run_indextts2_payload.json"
+        wrapper_stdout_log = out_wav.parent / "wrapper_stdout.log"
+        wrapper_stderr_log = out_wav.parent / "wrapper_stderr.log"
+        construct_debug_log = out_wav.parent / "construct_debug.jsonl"
+        construct_debug_enabled = _truthy(os.environ.get("INDEXTTS_CONSTRUCT_DEBUG"), False)
         self._write_wrapper(wrapper)
         infer_kwargs: dict[str, Any] = {
             "spk_audio_prompt": str(spk),
@@ -504,24 +661,90 @@ if __name__ == "__main__":
             "use_fp16": _truthy(self.tts_config.get("use_fp16"), False),
             "use_cuda_kernel": _truthy(self.tts_config.get("use_cuda_kernel"), False),
             "use_deepspeed": _truthy(self.tts_config.get("use_deepspeed"), False),
+            "text_normalizer": text_normalizer,
+            "offline_mode": offline_mode,
             "infer_kwargs": infer_kwargs,
         }
         payload.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        cmd = [self.python_executable, str(wrapper), "--payload", str(payload)]
+        cmd = [self.python_executable, "-X", "faulthandler", "-u", str(wrapper), "--payload", str(payload)]
         cwd = str(self.repo) if self.repo and self.repo.exists() else str(Path.cwd())
         env = os.environ.copy()
-        if self.repo:
-            env["PYTHONPATH"] = str(self.repo) + os.pathsep + env.get("PYTHONPATH", "")
-        self._log("STAGE", "tts_infer", "Running IndexTTS2 CLI wrapper...")
-        print("[AI_RUNTIME][INFO][tts_infer] IndexTTS2 wrapper command: " + " ".join(cmd), flush=True)
-        with self._heartbeat("tts_infer"):
-            result = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True, encoding="utf-8", timeout=1800)
-        if result.stdout:
-            print(result.stdout, end="", flush=True)
-        if result.stderr:
-            print(result.stderr, end="", file=sys.stderr, flush=True)
-        if result.returncode != 0:
-            raise RuntimeError(f"IndexTTS2 wrapper failed rc={result.returncode}: {(result.stderr or result.stdout)[:1200]}")
+        env.pop("PYTHONHOME", None)
+        env["PYTHONNOUSERSITE"] = "1"
+        env["PYTHONFAULTHANDLER"] = "1"
+        env["PYTHONUNBUFFERED"] = "1"
+        env["CUDA_LAUNCH_BLOCKING"] = "1"
+        env["PYTORCH_SHOW_CPP_STACKTRACES"] = "1"
+        env["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+        project_root = Path.cwd()
+        python_path_parts = [str(p) for p in [self.repo, project_root, project_root / "ai_runtime"] if p]
+        env["PYTHONPATH"] = os.pathsep.join(python_path_parts)
+        env["INDEXTTS_TEXT_NORMALIZER"] = text_normalizer
+        if construct_debug_enabled:
+            env["INDEXTTS_CONSTRUCT_DEBUG"] = "1"
+            env["INDEXTTS_CONSTRUCT_DEBUG_LOG"] = str(construct_debug_log)
+        else:
+            env.pop("INDEXTTS_CONSTRUCT_DEBUG", None)
+            env.pop("INDEXTTS_CONSTRUCT_DEBUG_LOG", None)
+        self._log("STAGE", "tts_model_load", "Running IndexTTS2 CLI wrapper...")
+        print("[AI_RUNTIME][INFO][tts_model_load] IndexTTS2 wrapper command: " + " ".join(cmd), flush=True)
+        stdout_lines: list[str] = []
+        stderr_lines: list[str] = []
+        process = subprocess.Popen(cmd, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8")
+
+        stdout_file = wrapper_stdout_log.open("w", encoding="utf-8", errors="replace")
+        stderr_file = wrapper_stderr_log.open("w", encoding="utf-8", errors="replace")
+
+        def pump(stream: Any, sink: list[str], target: Any, log_file: Any) -> None:
+            try:
+                for line in iter(stream.readline, ""):
+                    sink.append(line)
+                    self._observe_runtime_line(line)
+                    print(line, end="", file=log_file, flush=True)
+                    print(line, end="", file=target, flush=True)
+            finally:
+                try:
+                    stream.close()
+                except Exception:
+                    pass
+
+        out_thread = threading.Thread(target=pump, args=(process.stdout, stdout_lines, sys.stdout, stdout_file), daemon=True)
+        err_thread = threading.Thread(target=pump, args=(process.stderr, stderr_lines, sys.stderr, stderr_file), daemon=True)
+        try:
+            out_thread.start()
+            err_thread.start()
+            try:
+                result_code = process.wait(timeout=1800)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                raise RuntimeError("IndexTTS2 wrapper timed out after 1800 seconds.")
+            out_thread.join(timeout=2.0)
+            err_thread.join(timeout=2.0)
+        finally:
+            stdout_file.close()
+            stderr_file.close()
+        stdout_text = "".join(stdout_lines)
+        stderr_text = "".join(stderr_lines)
+        if result_code != 0:
+            wrapper_output = stderr_text + "\n" + stdout_text
+            if self._should_report_text_normalizer_fatal(wrapper_output):
+                raise RuntimeError(self._text_normalizer_failure_message())
+            recent = _recent_lines(wrapper_output)
+            last_line = _traceback_last_line(wrapper_output)
+            if result_code < 0 or result_code in {3221225477, -1073741819}:
+                last_marker = self._last_construct_marker(construct_debug_log)
+                raise NativeAccessViolation(
+                    "IndexTTS2 wrapper crashed with Windows access violation 0xC0000005 during model construction.\n"
+                    f"native_exit_code={result_code}\n"
+                    "native_exit_hex=0xC0000005\n"
+                    f"last_success_marker={last_marker or 'unknown'}\n"
+                    f"construct_debug_log={construct_debug_log}\n"
+                    f"wrapper_stdout_log={wrapper_stdout_log}\n"
+                    f"wrapper_stderr_log={wrapper_stderr_log}\n"
+                    "GUI hint: Native crash 0xC0000005 during IndexTTS2 construction. See construct_debug.jsonl / wrapper stderr.\n"
+                    f"Recent wrapper output:\n{recent}"
+                )
+            raise RuntimeError(f"IndexTTS2 wrapper failed rc={result_code}: {last_line}\nRecent wrapper output:\n{recent}")
         if not out_wav.exists() or out_wav.stat().st_size <= 0:
             raise RuntimeError(f"IndexTTS2 wrapper finished but wav is missing or empty: {out_wav}")
         return out_wav
@@ -568,13 +791,22 @@ if __name__ == "__main__":
         repo_ok = bool(self.repo and self.repo.exists())
         model_ok = bool(self.model_dir and self.model_dir.exists())
         config_ok = bool(self.config_path and self.config_path.exists())
+        windows = sys.platform.startswith("win")
+        auto_try_local_api = _truthy(self.tts_config.get("auto_try_local_api"), not windows)
+        auto_try_legacy = _truthy(self.tts_config.get("auto_try_legacy"), False)
         if repo_ok and model_ok and config_ok:
-            modes.extend(["indextts2_local_api", "indextts2_local_cli"])
+            modes.append("indextts2_local_cli")
+            if auto_try_local_api:
+                modes.append("indextts2_local_api")
         else:
-            modes.append("indextts2_local_api")
             if repo_ok:
                 modes.append("indextts2_local_cli")
-        modes.append("indextts_legacy")
+            if auto_try_local_api:
+                modes.append("indextts2_local_api")
+        if auto_try_legacy:
+            modes.append("indextts_legacy")
+        if not modes:
+            modes.append("indextts2_local_cli")
         return modes
 
     def synthesize(
@@ -618,4 +850,6 @@ if __name__ == "__main__":
             self.resolved_mode = "dryrun_fallback"
             self.name = "dryrun_fallback"
             return DryRunTts().synthesize(text, out_wav, emotion=emotion, target_duration_sec=target_duration_sec)
+        if self.backend_mode != "auto" and last_exc is not None:
+            raise last_exc
         raise self._friendly_error(last_exc or "No backend attempted")
